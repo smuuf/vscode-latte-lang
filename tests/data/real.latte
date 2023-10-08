@@ -1,0 +1,68 @@
+{varType bool $showHeader}
+{varType bool $showBucket}
+{varType array<\App\Model\Entities\Artifact> $artifacts}
+{varType \App\Model\Db\ArtifactModel $artifactModel}
+{varType \App\Model\FileSystemModel $fileSystemModel}
+{default bool $showHeader = true}
+{default bool $showBucketInfo = true}
+
+<p class="message" n:if="!$artifacts">
+	No artifacts found.
+</p>
+
+<table class="padding-tiny" n:if="$artifacts">
+	<thead n:if="$showHeader">
+		<tr>
+			<th class="w6"></th>
+			<th class="left">
+				{if $showBucketInfo}
+					Bucket
+					<span class="txt-faint">/</span>
+				{/if}
+				Name
+			</th>
+			<th class="w8 right">Size</th>
+			<th class="w8 right">Expires</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr n:foreach="$artifacts as $artifact">
+			{var $when = ($artifact->getCreatedAt()|when)}
+			{var \App\Model\Entities\Bucket $bucket = $artifact->getBucket()}
+			<td class="w8 right">
+				<span class="txt-tiny txt-faint no-wrap" title="{$artifact->getCreatedAt()}">
+					{$when}
+				</span>
+			</td>
+			<td class="left">
+				{if $showBucketInfo}
+					<span class="txt-tiny">
+						<a class="no-bold" n:href="Buckets:detail, id: $bucket->getId()">{$bucket->getName()}</a>
+						<span class="txt-faint">/</span>
+					</span>
+				{/if}
+				<a n:href="Artifacts:detail, id: $artifact->getId()">
+					<code>{$artifact->getName()}</code>
+				</a>
+			</td>
+			<td class="w8 right txt-faint txt-small">
+				{var $size = $artifact->getSize($artifactModel)}
+				{if $size}
+					{=$size|bytesToHuman}
+				{else}
+					&mdash;
+				{/if}
+			</td>
+			<td class="w8 right txt-faint txt-tiny">
+				{var $retention = $bucket->getRetention()}
+				{if $retention}
+					{var $expirationDatetime = sprintf("@%s + %s", strtotime($artifact->getCreatedAt()), $retention)}
+					{var $expiresIn = ($expirationDatetime|when)}
+					{=$expiresIn}
+				{else}
+					&mdash;
+				{/if}
+			</td>
+		</tr>
+	</tbody>
+</table>
