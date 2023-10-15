@@ -1,4 +1,5 @@
-import { isValidClassName, isValidVariableName } from "../regexes";
+import { parsePhpType, PhpType } from "../../TypeParser/typeParser";
+import { isValidTypeSpec, isValidVariableName } from "../regexes";
 import DumbTag from "../Scanner/DumbTag";
 import { Range, AbstractTag } from "../types";
 
@@ -10,7 +11,7 @@ export default class DefaultTag extends AbstractTag {
 	constructor(
 		readonly name: string,
 		readonly range: Range,
-		readonly type: string | null,
+		readonly type: PhpType | null,
 	) {
 		super()
 	}
@@ -35,14 +36,14 @@ export default class DefaultTag extends AbstractTag {
 
 		// Invalid {var ...} structure - doesn't have a $variableName as
 		// the second word.
-		if (!isValidClassName(tailParts[0])) {
+		if (!isValidTypeSpec(tailParts[0])) {
 			return null;
 		}
 
 		return new this(
 			tailParts[1],
 			dumbTag.range,
-			tailParts[0],
+			parsePhpType(tailParts[0])!,
 		);
 	}
 

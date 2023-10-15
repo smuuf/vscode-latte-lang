@@ -1,3 +1,5 @@
+import Stack from "../Stack"
+
 export const enum RegionType {
 	HTML = 'html',
 	HTML_TAG = 'html_tag',
@@ -12,4 +14,5 @@ export interface ScannerState {
 	character: number
 	maxOffset: number
 	lastLatteOpenTagOffset: number
+	regionTypeStack: Stack<RegionType>
 }

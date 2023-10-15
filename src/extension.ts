@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { CancellationToken, Hover, Position, TextDocument, HoverProvider } from "vscode";
 
 import { DocumentInfoProvider } from './Document'
+import { parsePhpType } from './TypeParser/typeParser';
 
 const LANG_ID = 'latte'
 const VARIABLE_REGEX = new RegExp('\\$[a-zA-Z_][a-zA-Z0-9_]*')
@@ -50,12 +51,12 @@ class ExtensionCore {
 		if (!varInfo) {
 			varInfo = {
 				name: varName,
-				type: 'unknown',
+				type: parsePhpType('unknown')
 			}
 		}
 
 		const md = new vscode.MarkdownString()
-		const tmpVarType = varInfo.type ? varInfo.type  : 'mixed'
+		const tmpVarType = varInfo.type ? varInfo.type.repr : 'mixed'
 		md.appendMarkdown(`_variable_ \`${tmpVarType} ${varInfo.name}\``)
 
 		return new Hover(md)

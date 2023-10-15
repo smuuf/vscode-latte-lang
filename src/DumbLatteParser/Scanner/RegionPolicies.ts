@@ -46,7 +46,7 @@ const allowedTransfers: TransferDefinition = {
 }
 
 
-const ignoredTransfers: TransferDefinition= {
+const ignoredTransfers: TransferDefinition = {
 	[RegionType.QUOTES_S]: [
 		RegionType.QUOTES_D,
 		RegionType.LATTE,

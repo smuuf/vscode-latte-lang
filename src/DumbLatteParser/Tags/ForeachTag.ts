@@ -1,4 +1,4 @@
-import { isValidClassName, isValidVariableName } from "../regexes";
+import { isValidVariableName } from "../regexes";
 import DumbTag from "../Scanner/DumbTag";
 import { Range, AbstractTag } from "../types";
 
@@ -8,9 +8,9 @@ export default class ForeachTag extends AbstractTag {
 	public static readonly DUMB_NAME = 'foreach';
 
 	constructor(
-		readonly name: string,
 		readonly range: Range,
-		readonly type: string | null,
+		readonly iteratesVariableName: string,
+		readonly iteratesAsVariableName: string,
 	) {
 		super()
 	}
@@ -18,27 +18,31 @@ export default class ForeachTag extends AbstractTag {
 	static fromDumbTag(dumbTag: DumbTag): ForeachTag | null {
 		const tailParts = dumbTag.tail.split(/\s+/);
 
-		// Invalid {varType ...} structure - has too many arguments.
-		if (tailParts.length !== 2) {
+		// Invalid "$something as $thing" structure - wrong number or parts.
+		if (tailParts.length !== 3) {
 			return null;
 		}
 
-		// Invalid {var ...} structure - doesn't have a $variableName as
-		// the second word.
-		if (!isValidClassName(tailParts[0])) {
+		// Invalid "$something as $thing" structure - doesn't have the
+		// word "as" inbetween.
+		if (tailParts[1] !== "as") {
 			return null;
 		}
 
-		// Invalid {var ...} structure - doesn't have a $variableName as
-		// the second arg.
-		if (!isValidVariableName(tailParts[1])) {
+		// Invalid {var ...} structure - doesn't have valid variable names.
+		// Known issue: This disallows iteration of literals: "[0, 1] as $meh"
+		// or destructuring "[...] as ['key1' => $a, ...]", but meh.
+		if (
+			!isValidVariableName(tailParts[0])
+			|| !isValidVariableName(tailParts[2])
+		) {
 			return null;
 		}
 
 		return new this(
-			tailParts[1],
 			dumbTag.range,
 			tailParts[0],
+			tailParts[2],
 		);
 	}
 

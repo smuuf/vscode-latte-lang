@@ -1,7 +1,9 @@
 import { parseLatte } from "../../src/DumbLatteParser/Parser"
 import DefaultTag from "../../src/DumbLatteParser/Tags/DefaultTag"
+import ForeachTag from "../../src/DumbLatteParser/Tags/ForeachTag"
 import VarTag from "../../src/DumbLatteParser/Tags/VarTag"
 import VarTypeTag from "../../src/DumbLatteParser/Tags/VarTypeTag"
+import { parsePhpType } from "../../src/TypeParser/typeParser"
 import { readDataFile } from "../utils"
 
 
@@ -23,7 +25,7 @@ test('Test parser', () => {
 				start: {line: 1, character: 0, offset: 13},
 				end: {line: 1, character: 16, offset: 29},
 			},
-			'bool',
+			parsePhpType('bool'),
 		),
 		new VarTypeTag(
 			'$treti',
@@ -31,7 +33,7 @@ test('Test parser', () => {
 				start: {line: 1, character: 17, offset: 30},
 				end: {line: 1, character: 53, offset: 66},
 			},
-			'\\MyNamespace\\MyClass',
+			parsePhpType('\\MyNamespace\\MyClass'),
 		),
 		new DefaultTag(
 			'$ctvrty',
@@ -47,9 +49,25 @@ test('Test parser', () => {
 				start: {line: 3, character: 21, offset: 122},
 				end: {line: 3, character: 49, offset: 150},
 			},
-			'int|float',
+			parsePhpType('int|float'),
+		),
+		new ForeachTag(
+			{
+				start: {line: 4, character: 0, offset: 152},
+				end: {line: 4, character: 24, offset: 176},
+			},
+			'$paty',
+			'$sesty',
+		),
+		new ForeachTag(
+			{
+				start: {line: 7, character: 5, offset: 206},
+				end: {line: 7, character: 29, offset: 230},
+			},
+			'$sedmy',
+			'$osmy',
 		),
 	]
-console.log(result)
+
 	expect(result).toMatchObject(expected)
 })
