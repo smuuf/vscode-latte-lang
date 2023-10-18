@@ -1,7 +1,6 @@
-import DumbTag from "../../src/DumbLatteParser/Scanner/DumbTag"
-import { Scanner } from "../../src/DumbLatteParser/Scanner/Scanner"
-import { RegionType } from "../../src/DumbLatteParser/Scanner/types"
-import { dump } from "../../src/helpers"
+import DumbTag from "../../src/Extension/DumbLatteParser/Scanner/DumbTag"
+import { Scanner } from "../../src/Extension/DumbLatteParser/Scanner/Scanner"
+import { RegionType } from "../../src/Extension/DumbLatteParser/Scanner/types"
 import { readDataFile } from "../utils"
 
 

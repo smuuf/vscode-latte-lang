@@ -1,4 +1,4 @@
-import Stack from "../Stack"
+import Stack from "../../utils/Stack"
 import { RegionType } from "./types"
 
 type TransferPath = (RegionType | Array<RegionType>)[]

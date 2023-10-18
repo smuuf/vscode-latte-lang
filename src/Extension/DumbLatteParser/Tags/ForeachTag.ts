@@ -1,11 +1,11 @@
-import { isValidVariableName } from "../regexes";
-import DumbTag from "../Scanner/DumbTag";
-import { Range, AbstractTag } from "../types";
+import { isValidVariableName } from "../regexes"
+import DumbTag from "../Scanner/DumbTag"
+import { Range, AbstractTag } from "../types"
 
 
 export default class ForeachTag extends AbstractTag {
 
-	public static readonly DUMB_NAME = 'foreach';
+	public static readonly DUMB_NAME = 'foreach'
 
 	constructor(
 		readonly range: Range,
@@ -16,17 +16,17 @@ export default class ForeachTag extends AbstractTag {
 	}
 
 	static fromDumbTag(dumbTag: DumbTag): ForeachTag | null {
-		const tailParts = dumbTag.tail.split(/\s+/);
+		const tailParts = dumbTag.tail.split(/\s+/)
 
 		// Invalid "$something as $thing" structure - wrong number or parts.
 		if (tailParts.length !== 3) {
-			return null;
+			return null
 		}
 
 		// Invalid "$something as $thing" structure - doesn't have the
 		// word "as" inbetween.
 		if (tailParts[1] !== "as") {
-			return null;
+			return null
 		}
 
 		// Invalid {var ...} structure - doesn't have valid variable names.
@@ -36,14 +36,14 @@ export default class ForeachTag extends AbstractTag {
 			!isValidVariableName(tailParts[0])
 			|| !isValidVariableName(tailParts[2])
 		) {
-			return null;
+			return null
 		}
 
 		return new this(
 			dumbTag.range,
 			tailParts[0],
 			tailParts[2],
-		);
+		)
 	}
 
 }

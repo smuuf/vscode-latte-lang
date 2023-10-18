@@ -1,9 +1,9 @@
 import DumbTag from "./DumbTag"
 import { Position } from "../types"
 import { RegionType, ScannerState } from "./types"
-import Stack from "../Stack"
+import Stack from "../../utils/Stack"
 import { isRegionTransferAllowed, isRegionTransferIgnored } from "./RegionPolicies"
-import { isString } from "../../helpers"
+import { isString } from "../../utils/utils"
 
 
 const WORD_REGEX = /[a-zA-Z_][a-zA-Z0-9_-]*/
@@ -115,7 +115,7 @@ export class Scanner {
 		const result = regex.exec(rest)
 		if (result) {
 			const wholeFound = result[0]
-			let found = null
+			let found: string | null = null
 
 			// Get the first found of the requested return groups.
 			for (const retGroup of returnGroups) {
@@ -201,7 +201,7 @@ export class Scanner {
 			return
 		}
 
-		const tagArg = this.collectRegex(QUOTED_STRING_REGEX, ['s1', 's2']);
+		const tagArg = this.collectRegex(QUOTED_STRING_REGEX, ['s1', 's2'])
 		if (!tagArg) {
 			return
 		}

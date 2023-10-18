@@ -1,4 +1,4 @@
-import { KeyedCircularBuffer } from "../src/helpers";
+import { KeyedCircularBuffer } from "../src/Extension/utils/KeyedCircularBuffer"
 
 
 test('Keyed circular buffer', () => {

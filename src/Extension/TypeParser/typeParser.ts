@@ -1,4 +1,4 @@
-import { lruCache, dump } from "../helpers.js"
+import { lruCache } from "../utils/lruCache.js"
 import * as parser from "./parser.js"
 
 //
@@ -12,12 +12,14 @@ type UnionType = {
 	types: SingleType[]
 	repr: string,
 	iteratesAs: IterationSpec
+	nullable: boolean
 }
 type IterationSpec = null | {value: PhpType} | {key: PhpType, value: PhpType}
 type SingleType = {
 	name: string,
 	repr: string,
 	iteratesAs: IterationSpec
+	nullable: boolean
 }
 
 
@@ -33,20 +35,20 @@ const BASIC_ITERABLES = [
 
 function determineIterationItem(
 	typeName: string,
-	templateArgs: any[],
+	template: any[],
 ): IterationSpec {
 	// Support for:
 	// 1. (array|\ArrayAccess|\Iterator|\Traversable)<valueType>
 	// 2. (array|\ArrayAccess|\Iterator|\Traversable)<keyType, valueType>
-	if (templateArgs && BASIC_ITERABLES.includes(typeName)) {
-		if (templateArgs.length === 2) {
+	if (template && BASIC_ITERABLES.includes(typeName)) {
+		if (template.length === 2) {
 			return {
-				key: processTypeAst(templateArgs[0]),
-				value: processTypeAst(templateArgs[1]),
+				key: processTypeAst(template[0]),
+				value: processTypeAst(template[1]),
 			}
-		} else if (templateArgs.length === 1) {
+		} else if (template.length === 1) {
 			return {
-				value: processTypeAst(templateArgs[0]),
+				value: processTypeAst(template[0]),
 			}
 		}
 	}
@@ -65,9 +67,9 @@ function stringifyType(typeAst: any): string {
 		return list.join('|')
 	}
 
-	const templateArgs = typeAst.templateArgs as Array<any>
-	if (templateArgs) {
-		const list = templateArgs.map((item: any) => stringifyType(item))
+	const template = typeAst.template as Array<any>
+	if (template) {
+		const list = template.map((item: any) => stringifyType(item))
 		return `${typeAst.type}<${list.join(', ')}>`
 	}
 
@@ -83,16 +85,18 @@ function processTypeAst(typeAst: any): PhpType {
 			types: typeAst.union.map((item: any) => processTypeAst(item)),
 			repr: stringifyType(typeAst),
 			iteratesAs: null,
+			nullable: false,
 		}
 	}
 
 	// Convert "myType[]" to "array<MyType>"".
 	if (typeAst.list) {
-		typeAst.templateArgs = [{
+		typeAst.template = [{
 			type: typeAst.type,
-			templateArgs: null,
+			template: null,
 			list: false,
 			union: null,
+			nullable: typeAst.nullable || false,
 		}]
 		typeAst.type = 'array'
 	}
@@ -100,7 +104,8 @@ function processTypeAst(typeAst: any): PhpType {
 	return {
 		name: typeAst.type,
 		repr: stringifyType(typeAst),
-		iteratesAs: determineIterationItem(typeAst.type, typeAst.templateArgs || null),
+		iteratesAs: determineIterationItem(typeAst.type, typeAst.template || null),
+		nullable: typeAst.nullable || false,
 	}
 }
 

@@ -1,9 +1,9 @@
-import DumbTag from "../Scanner/DumbTag";
-import { AbstractTag } from "../types";
-import DefaultTag from "./DefaultTag";
-import ForeachTag from "./ForeachTag";
-import VarTag from "./VarTag";
-import VarTypeTag from "./VarTypeTag";
+import DumbTag from "../Scanner/DumbTag"
+import { AbstractTag } from "../types"
+import DefaultTag from "./DefaultTag"
+import ForeachTag from "./ForeachTag"
+import VarTag from "./VarTag"
+import VarTypeTag from "./VarTypeTag"
 
 
 export abstract class TagFactory {
@@ -16,28 +16,28 @@ export abstract class TagFactory {
 		VarTypeTag,
 		DefaultTag,
 		ForeachTag,
-	];
+	]
 
 	static createFromDumbTag(dumbTag: DumbTag | null): AbstractTag | null {
 	  if (!dumbTag) {
-		return null;
+		return null
 	  }
 
-	  const name = dumbTag.name;
+	  const name = dumbTag.name
 	  for (let tagTypeClass of TagFactory.KNOWN_TAG_TYPES) {
 		// NOTE: This cast is also necessarry for typescript to shut up
 		// about accessing undefined static properties of tag classes which are
 		// defined on their abstract class.
 		if ((tagTypeClass as typeof AbstractTag).DUMB_NAME !== name) {
-			continue;
+			continue
 		}
 
-		const tag = (tagTypeClass as typeof AbstractTag).fromDumbTag(dumbTag);
+		const tag = (tagTypeClass as typeof AbstractTag).fromDumbTag(dumbTag)
 		if (tag !== null) {
-			return tag;
+			return tag
 		}
 	  }
 
-	  return null;
+	  return null
 	}
   }

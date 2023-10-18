@@ -1,42 +1,38 @@
-import * as vscode from 'vscode';
-import { TextDocument } from "vscode";
-import { parseLatte } from "./DumbLatteParser/Parser";
-import DefaultTag from "./DumbLatteParser/Tags/DefaultTag";
-import VarTag from "./DumbLatteParser/Tags/VarTag";
-import VarTypeTag from "./DumbLatteParser/Tags/VarTypeTag";
-import RuntimeCache from "./RuntimeCache";
-import { PhpType } from "./TypeParser/typeParser";
-import { isInstanceOf, narrowType } from "./helpers";
-import { debugMessage } from "./helpers.vscode";
-import ForeachTag from './DumbLatteParser/Tags/ForeachTag';
+import * as vscode from 'vscode'
+import { TextDocument } from "vscode"
+import { parseLatte } from "./DumbLatteParser/parser"
+import DefaultTag from "./DumbLatteParser/Tags/DefaultTag"
+import VarTag from "./DumbLatteParser/Tags/VarTag"
+import VarTypeTag from "./DumbLatteParser/Tags/VarTypeTag"
+import RuntimeCache from "./utils/RuntimeCache"
+import { PhpType } from "./TypeParser/typeParser"
+import { isInstanceOf, narrowType } from "./utils/utils"
+import { debugMessage } from "./utils/utils.vscode"
+import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
 
 
 export interface VariableInfo {
 	name: string,
 	type: PhpType | null,
+	definedAt: vscode.Position | null,
 }
 
 
-export interface DefinedVariable {
-	variable: VariableInfo
-	definedAt: vscode.Position,
-}
+type VariableDefinitions = Map<string, VariableInfo[]>
 
 
-type VariableDefinitions = Map<string, DefinedVariable[]>
-
-export interface DocumentInfo {
+export interface LatteFileInfo {
 	variables: VariableDefinitions
 }
 
 
-export class DocumentScanner {
+export class LatteTagsProcessor {
 
-	public static scan(doc: TextDocument): DocumentInfo {
+	public static scan(doc: TextDocument): LatteFileInfo {
 		const msg = debugMessage("Scanning Latte document")
 
 		const parsed = parseLatte(doc.getText())
-		const varDefs = new Map<string, DefinedVariable[]>()
+		const varDefs = new Map<string, VariableInfo[]>()
 
 		for (let tag of parsed) {
 			if (isInstanceOf(tag, VarTag, VarTypeTag, DefaultTag)) {
@@ -58,16 +54,12 @@ export class DocumentScanner {
 	}
 
 	private static processVariableTags(
-		varDefs: Map<string, DefinedVariable[]>,
+		varDefs: Map<string, VariableInfo[]>,
 		tag: VarTag | VarTypeTag | DefaultTag,
 	): void {
 		const varInfo: VariableInfo = {
 			name: tag.name,
 			type: tag.type,
-		}
-
-		const definedVar: DefinedVariable = {
-			variable: varInfo,
 			definedAt: new vscode.Position(
 				tag.range.start.line,
 				tag.range.start.character,
@@ -86,11 +78,11 @@ export class DocumentScanner {
 			varDefs.set(varInfo.name, [])
 		}
 
-		varDefs.get(varInfo.name)?.push(definedVar)
+		varDefs.get(varInfo.name)?.push(varInfo)
 	}
 
 	private static processForeachTag(
-		varDefs: Map<string, DefinedVariable[]>,
+		varDefs: Map<string, VariableInfo[]>,
 		tag: ForeachTag,
 	): void {
 		const varName = tag.iteratesAsVariableName
@@ -100,7 +92,7 @@ export class DocumentScanner {
 			tag.range.start.character,
 		)
 
-		const iterableType = DocumentInfoProvider.findVariableInfo(
+		const iterableType = LatteFileInfoProvider.findVariableInfo(
 			varDefs,
 			iterableVarName,
 			position,
@@ -109,10 +101,6 @@ export class DocumentScanner {
 		const varInfo: VariableInfo = {
 			name: varName,
 			type: iterableType?.iteratesAs ? iterableType.iteratesAs.value : null,
-		}
-
-		const definedVar: DefinedVariable = {
-			variable: varInfo,
 			definedAt: position,
 		}
 
@@ -120,42 +108,40 @@ export class DocumentScanner {
 			varDefs.set(varInfo.name, [])
 		}
 
-		varDefs.get(varInfo.name)?.push(definedVar)
+		varDefs.get(varInfo.name)?.push(varInfo)
 	}
 
 }
 
-export class DocumentInfoProvider {
+export class LatteFileInfoProvider {
 
-	cache: RuntimeCache<TextDocument, DocumentInfo>
+	cache: RuntimeCache<TextDocument, LatteFileInfo>
 
 	public constructor() {
 		this.cache = new RuntimeCache()
 	}
 
-	public resetDocumentInfo(doc: TextDocument): void {
+	public forgetFileInfo(doc: TextDocument): void {
 		this.cache.delete(doc)
 	}
 
-	public rescanDocumentInfo(doc: TextDocument): DocumentInfo {
-		const docInfo = DocumentScanner.scan(doc)
+	private async rescanFile(doc: TextDocument): Promise<LatteFileInfo> {
+		const docInfo = LatteTagsProcessor.scan(doc)
 		this.cache.set(doc, docInfo)
 		return docInfo
 	}
 
-	public getVariableInfo(
+	public async getVariableInfo(
 		doc: TextDocument,
 		varName: string,
 		position: vscode.Position,
-	): VariableInfo | null {
-
+	): Promise<VariableInfo | null> {
 		let docInfo = this.cache.get(doc)
 		if (!docInfo) {
-			docInfo = this.rescanDocumentInfo(doc)
+			docInfo = await this.rescanFile(doc)
 		}
 
-		return DocumentInfoProvider.findVariableInfo(docInfo.variables, varName, position)
-
+		return LatteFileInfoProvider.findVariableInfo(docInfo.variables, varName, position)
 	}
 
 	public static findVariableInfo(
@@ -170,12 +156,14 @@ export class DocumentInfoProvider {
 		}
 
 		// ...and find the latest one for specified position.
-		const foundDefinition: DefinedVariable | undefined = defs.findLast(
-			(varDef: DefinedVariable): boolean => {
-				return position.isAfterOrEqual(varDef.definedAt)
+		const foundDefinition: VariableInfo | undefined = defs.findLast(
+			(varDef: VariableInfo): boolean => {
+				return varDef.definedAt
+					? position.isAfterOrEqual(varDef.definedAt)
+					: false
 			})
 
-		return foundDefinition ? foundDefinition.variable : null
+		return foundDefinition ?? null
 	}
 
 }

@@ -3,7 +3,7 @@
 .gitignore
 vsc-extension-quickstart.md
 node_modules
-out/
-src/
+out/**
+src/**
 tsconfig.json
 webpack.config.js

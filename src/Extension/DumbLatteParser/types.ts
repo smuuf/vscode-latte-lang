@@ -6,17 +6,15 @@ export interface Range {
 }
 
 export interface Position {
+	offset: number
 	line: number
 	character: number
-	offset: number
 }
 
 export abstract class AbstractTag {
 	static DUMB_NAME: string = ''
-	static name: string = ''
+	static tagName: string = ''
 	static range: Range
 	static fromDumbTag: (dumbTag: DumbTag) => AbstractTag | null
 	static new: (...args: any) => typeof AbstractTag
 }
-
-

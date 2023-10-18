@@ -1,9 +1,9 @@
-import { parseLatte } from "../../src/DumbLatteParser/Parser"
-import DefaultTag from "../../src/DumbLatteParser/Tags/DefaultTag"
-import ForeachTag from "../../src/DumbLatteParser/Tags/ForeachTag"
-import VarTag from "../../src/DumbLatteParser/Tags/VarTag"
-import VarTypeTag from "../../src/DumbLatteParser/Tags/VarTypeTag"
-import { parsePhpType } from "../../src/TypeParser/typeParser"
+import { parseLatte } from "../../src/Extension/DumbLatteParser/Parser"
+import DefaultTag from "../../src/Extension/DumbLatteParser/Tags/DefaultTag"
+import ForeachTag from "../../src/Extension/DumbLatteParser/Tags/ForeachTag"
+import VarTag from "../../src/Extension/DumbLatteParser/Tags/VarTag"
+import VarTypeTag from "../../src/Extension/DumbLatteParser/Tags/VarTypeTag"
+import { parsePhpType } from "../../src/Extension/TypeParser/typeParser"
 import { readDataFile } from "../utils"
 
 

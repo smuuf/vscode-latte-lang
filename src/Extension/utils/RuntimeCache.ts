@@ -1,5 +1,4 @@
 export default class RuntimeCache<K, V> {
-
 	cache = new Map<K, V>()
 
 	public set(k: K, v: V): void {
@@ -14,4 +13,7 @@ export default class RuntimeCache<K, V> {
 		this.cache.delete(k)
 	}
 
+	public isEmpty(): boolean {
+		return this.cache.size === 0
+	}
 }
