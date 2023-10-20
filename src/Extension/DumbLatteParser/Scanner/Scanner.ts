@@ -1,17 +1,13 @@
-import DumbTag from "./DumbTag"
-import { Position } from "../types"
-import { RegionType, ScannerState } from "./types"
-import Stack from "../../utils/Stack"
-import { isRegionTransferAllowed, isRegionTransferIgnored } from "./RegionPolicies"
-import { isString } from "../../utils/utils"
-
+import DumbTag from './DumbTag'
+import { DumbTagConstructorArgs, RegionType, ScannerState } from './types'
+import Stack from '../../utils/Stack'
+import { isRegionTransferAllowed, isRegionTransferIgnored } from './RegionPolicies'
+import { isString } from '../../utils/utils'
 
 const WORD_REGEX = /[a-zA-Z_][a-zA-Z0-9_-]*/
 const QUOTED_STRING_REGEX = /(")(?<s1>(?:\\"|[^"])+)\1|(')(?<s2>(?:\\'|[^'])+)\1/
 
-
 export class Scanner {
-
 	private source: string
 	private state!: ScannerState
 	private tags!: DumbTag[]
@@ -28,7 +24,7 @@ export class Scanner {
 			character: -1,
 			maxOffset: this.source.length - 1,
 			lastLatteOpenTagOffset: 0,
-			regionTypeStack: new Stack<RegionType>()
+			regionTypeStack: new Stack<RegionType>(),
 		}
 
 		this.tags = []
@@ -53,29 +49,29 @@ export class Scanner {
 			// Known issue: We don't handle escaped things (for example '\"')
 			// or detection/processing of double Latte syntax.
 			switch (char) {
-				case "\n":
+				case '\n':
 					this.handleNewline()
 					break
-				case "{":
+				case '{':
 					this.openLatteTag()
 					break
-				case "}":
+				case '}':
 					this.closeLatteTag()
 					break
-				case "n": // n:whatever Latte tags.
+				case 'n': // n:whatever Latte tags.
 					// If in HTML tag and the "n" is followed by ":" ...
 					if (
-						this.source[state.offset + 1] === ":"
-						&& this.state.regionTypeStack.top() === RegionType.HTML_TAG
+						this.source[state.offset + 1] === ':' &&
+						this.state.regionTypeStack.top() === RegionType.HTML_TAG
 					) {
 						state.offset += 2
 						this.collectNLatteTag()
 					}
 					break
-				case "<":
+				case '<':
 					this.openHtmlTag()
 					break
-				case ">":
+				case '>':
 					this.closeHtmlTag()
 					break
 				case '"':
@@ -104,11 +100,11 @@ export class Scanner {
 
 	private collectRegex(
 		regex: RegExp,
-		returnGroups: (string | number)[] = [0]
+		returnGroups: (string | number)[] = [0],
 	): string | null {
 		const state = this.state
 
-		// We don't really expect super long words, so don't create
+		// We don't really expect super long matches, so don't create
 		// unnecessarily too long slice of the source string.
 		const rest = this.source.substring(state.offset, state.offset + 1000)
 
@@ -117,7 +113,9 @@ export class Scanner {
 			const wholeFound = result[0]
 			let found: string | null = null
 
-			// Get the first found of the requested return groups.
+			// Get the first of the requested return groups that were found
+			// This is really just a workaround about JS regexes not supporting
+			// multiple named match groups in a single pattern.
 			for (const retGroup of returnGroups) {
 				if (result.groups && isString(retGroup)) {
 					found = result.groups[retGroup]
@@ -141,12 +139,13 @@ export class Scanner {
 			state.character += wholeFound.length - 1 + result.index
 
 			// ... and take any newlines into account.
-			const lines = countChar("\n", wholeFound)
+			const lines = countChar('\n', wholeFound)
 			if (lines) {
 				state.line += lines
 				// How many characters are at the end of the string after
 				// the last newline.
-				state.character = wholeFound.length - wholeFound.lastIndexOf("\n") - 2 + result.index
+				state.character =
+					wholeFound.length - wholeFound.lastIndexOf('\n') - 2 + result.index
 			}
 
 			return found
@@ -177,12 +176,12 @@ export class Scanner {
 		state.character += literalLength
 
 		// ... and take any newlines into account.
-		const lines = countChar("\n", str)
+		const lines = countChar('\n', str)
 		if (lines) {
 			state.line += lines
 			// How many characters are at the end of the string after
 			// the last newline.
-			state.character = literalLength - str.lastIndexOf("\n") - 1
+			state.character = literalLength - str.lastIndexOf('\n') - 1
 		}
 
 		return str
@@ -194,35 +193,31 @@ export class Scanner {
 
 		const tagName = this.collectRegex(WORD_REGEX)
 		if (!tagName) {
+			this.state = originalState
 			return
 		}
 
-		if (!this.collectLiteral("=")) {
+		if (!this.collectLiteral('=')) {
 			return
 		}
 
-		const tagArg = this.collectRegex(QUOTED_STRING_REGEX, ['s1', 's2'])
-		if (!tagArg) {
+		const tagArgs = this.collectRegex(QUOTED_STRING_REGEX, ['s1', 's2'])
+		if (!tagArgs) {
+			this.state = originalState
 			return
 		}
 
-		const start: Position = {
-			line: originalState.line,
-			character: originalState.character,
-			offset: originalState.offset,
-		}
+		const startOffset = originalState.offset
+		const endOffset = state.offset
 
-		const end: Position = {
-			line: state.line,
-			character: state.character,
-			offset: state.offset,
-		}
-
-		const dumbTag = new DumbTag(
-			`${tagName} ${tagArg}`,
-			{start: start, end: end},
-			RegionType.LATTE,
-		)
+		const dumbTag = new DumbTag({
+			name: tagName,
+			nameOffset: originalState.offset,
+			args: tagArgs,
+			argsOffset: originalState.offset + tagName.length + 2, // Length of '="' which are in front of the args.
+			tagRange: { startOffset, endOffset },
+			regionType: RegionType.LATTE,
+		} as DumbTagConstructorArgs)
 
 		this.tags.push(dumbTag)
 		this.state = state
@@ -236,26 +231,32 @@ export class Scanner {
 			state.offset,
 		)
 
-		const start: Position = {
-			line: state.line,
-			character: state.character
-				- (state.offset - state.lastLatteOpenTagOffset),
-			offset: state.lastLatteOpenTagOffset,
+		const startOffset = state.lastLatteOpenTagOffset
+		const endOffset = state.offset
+
+		const match = tagContent.match(/(?<name>[^\s]+)(?<sepSpace>\s+)?(?<args>.*$)?/)
+		if (match) {
+			// We want exact offsets of name and args, so we must do this a bit
+			// more complicated (accounf for length of the space between
+			// tag name and its arguments).
+			const groups = match.groups!
+			const tagName = groups['name']
+			const sep = groups['sepSpace'] || ''
+			const args = groups['args'] || ''
+			const nameOffset = state.lastLatteOpenTagOffset + 1
+
+			const dumbTag = new DumbTag({
+				name: tagName,
+				nameOffset: nameOffset,
+				args: args,
+				argsOffset: nameOffset + tagName.length + sep.length,
+				tagRange: { startOffset, endOffset },
+				regionType: RegionType.LATTE,
+			} as DumbTagConstructorArgs)
+
+			this.tags.push(dumbTag)
 		}
 
-		const end: Position = {
-			line: state.line,
-			character: state.character,
-			offset: state.offset,
-		}
-
-		const dumbTag = new DumbTag(
-			tagContent,
-			{start: start, end: end},
-			state.regionTypeStack.top()!,
-		)
-
-		this.tags.push(dumbTag)
 		this.exitRegion(RegionType.LATTE)
 	}
 
@@ -290,7 +291,9 @@ export class Scanner {
 
 		if (!isRegionTransferAllowed(regionType, this.state.regionTypeStack)) {
 			const currentRegionType = this.state.regionTypeStack.top()
-			this.error(`Unexpected change of region type from '${currentRegionType}' into '${regionType}'`)
+			this.error(
+				`Unexpected change of region type from '${currentRegionType}' into '${regionType}'`,
+			)
 		}
 
 		this.state.regionTypeStack.push(regionType)
@@ -298,7 +301,7 @@ export class Scanner {
 
 	private exitRegion(regionType: RegionType): void {
 		if (!this.state.regionTypeStack.size()) {
-			this.error("Region type stack is empty - cannot exit region type")
+			this.error('Region type stack is empty - cannot exit region type')
 		}
 
 		if (isRegionTransferIgnored(regionType, this.state.regionTypeStack)) {
@@ -311,7 +314,6 @@ export class Scanner {
 
 		this.state.regionTypeStack.pop()
 	}
-
 }
 
 function countChar(char: string, string: string): number {

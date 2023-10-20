@@ -1,8 +1,7 @@
-import DumbTag from "../../src/Extension/DumbLatteParser/Scanner/DumbTag"
-import { Scanner } from "../../src/Extension/DumbLatteParser/Scanner/Scanner"
-import { RegionType } from "../../src/Extension/DumbLatteParser/Scanner/types"
-import { readDataFile } from "../utils"
-
+import DumbTag from '../../src/Extension/DumbLatteParser/Scanner/DumbTag'
+import { Scanner } from '../../src/Extension/DumbLatteParser/Scanner/Scanner'
+import { RegionType } from '../../src/Extension/DumbLatteParser/Scanner/types'
+import { readDataFile } from '../utils'
 
 test('Test basic scanner properties', () => {
 	const scanner = new Scanner(readDataFile('justString.txt'))
@@ -27,117 +26,154 @@ test('Test basic scanner properties', () => {
 	expect(state.maxOffset).toBe(47)
 })
 
-
 test('Simple template scan', () => {
 	const scanner = new Scanner(readDataFile('simple.latte'))
 	const result = scanner.scan()
 
 	const expected = [
-		new DumbTag(
-			'var $prvni',
-			{
-				start: {line: 0, character: 0, offset: 0},
-				end: {line: 0, character: 11, offset: 11},
+		new DumbTag({
+			name: 'var',
+			args: '$prvni',
+			nameOffset: 1,
+			argsOffset: 5,
+			tagRange: {
+				startOffset: 0,
+				endOffset: 11,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'var bool $druhy',
-			{
-				start: {line: 1, character: 0, offset: 13},
-				end: {line: 1, character: 16, offset: 29},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: 'var',
+			args: 'bool $druhy',
+			nameOffset: 14,
+			argsOffset: 18,
+			tagRange: {
+				startOffset: 13,
+				endOffset: 29,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'varType \\MyNamespace\\MyClass $treti',
-			{
-				start: {line: 1, character: 17, offset: 30},
-				end: {line: 1, character: 53, offset: 66},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: 'varType',
+			args: '\\MyNamespace\\MyClass $treti',
+			nameOffset: 31,
+			argsOffset: 39,
+			tagRange: {
+				startOffset: 30,
+				endOffset: 66,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'$prvni',
-			{
-				start: {line: 2, character: 9, offset: 77},
-				end: {line: 2, character: 16, offset: 84},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: '$prvni',
+			args: '',
+			nameOffset: 78,
+			argsOffset: 84,
+			tagRange: {
+				startOffset: 77,
+				endOffset: 84,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'$druhy',
-			{
-				start: {line: 2, character: 18, offset: 86},
-				end: {line: 2, character: 25, offset: 93},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: '$druhy',
+			args: '',
+			nameOffset: 87,
+			argsOffset: 93,
+			tagRange: {
+				startOffset: 86,
+				endOffset: 93,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'default $ctvrty = 4',
-			{
-				start: {line: 3, character: 0, offset: 101},
-				end: {line: 3, character: 20, offset: 121},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: 'default',
+			args: '$ctvrty = 4',
+			nameOffset: 102,
+			argsOffset: 110,
+			tagRange: {
+				startOffset: 101,
+				endOffset: 121,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'default int|float $paty = 5',
-			{
-				start: {line: 3, character: 21, offset: 122},
-				end: {line: 3, character: 49, offset: 150},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: 'default',
+			args: 'int|float $paty = 5',
+			nameOffset: 123,
+			argsOffset: 131,
+			tagRange: {
+				startOffset: 122,
+				endOffset: 150,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'foreach $paty as $sesty',
-			{
-				start: {line: 4, character: 0, offset: 152},
-				end: {line: 4, character: 24, offset: 176}
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: 'foreach',
+			args: '$paty as $sesty',
+			nameOffset: 153,
+			argsOffset: 161,
+			tagRange: {
+				startOffset: 152,
+				endOffset: 176,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'$sesty',
-			{
-				start: {line: 5, character: 1, offset: 179},
-				end: {line: 5, character: 8, offset: 186},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: '$sesty',
+			args: '',
+			nameOffset: 180,
+			argsOffset: 186,
+			tagRange: {
+				startOffset: 179,
+				endOffset: 186,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'/foreach',
-			{
-				start: {line: 6, character: 0, offset: 188},
-				end: {line: 6, character: 9, offset: 197}
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: '/foreach',
+			args: '',
+			nameOffset: 189,
+			argsOffset: 197,
+			tagRange: {
+				startOffset: 188,
+				endOffset: 197,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'foreach $sedmy as $osmy',
-			{
-				start: {line: 7, character: 5, offset: 206},
-				end: {line: 7, character: 29, offset: 230}
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: 'foreach',
+			args: '$sedmy as $osmy',
+			nameOffset: 206,
+			argsOffset: 215,
+			tagRange: {
+				startOffset: 206,
+				endOffset: 230,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'$osmy',
-			{
-				start: {line: 8, character: 1, offset: 253},
-				end: {line: 8, character: 7, offset: 259},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: '$osmy',
+			args: '',
+			nameOffset: 254,
+			argsOffset: 259,
+			tagRange: {
+				startOffset: 253,
+				endOffset: 259,
 			},
-			RegionType.LATTE,
-		),
-		new DumbTag(
-			'$devaty',
-			{
-				start: {line: 8, character: 9, offset: 261},
-				end: {line: 8, character: 17, offset: 269},
+			regionType: RegionType.LATTE,
+		}),
+		new DumbTag({
+			name: '$devaty',
+			args: '',
+			nameOffset: 262,
+			argsOffset: 269,
+			tagRange: {
+				startOffset: 261,
+				endOffset: 269,
 			},
-			RegionType.LATTE,
-		),
-
+			regionType: RegionType.LATTE,
+		}),
 	]
 
 	expect(result).toMatchObject(expected)

@@ -1,6 +1,4 @@
-import { KeyedCircularBuffer } from "./KeyedCircularBuffer"
-
-
+import { KeyedCircularBuffer } from './KeyedCircularBuffer'
 
 export function lruCache(fn: CallableFunction, maxSize = 200) {
 	const buffer = new KeyedCircularBuffer<string, any>(maxSize)

@@ -1,14 +1,8 @@
-import DumbTag from "./Scanner/DumbTag"
+import DumbTag from './Scanner/DumbTag'
 
 export interface Range {
-	start: Position
-	end: Position
-}
-
-export interface Position {
-	offset: number
-	line: number
-	character: number
+	startOffset: integer
+	endOffset: integer
 }
 
 export abstract class AbstractTag {

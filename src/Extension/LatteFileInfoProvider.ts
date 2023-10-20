@@ -1,35 +1,30 @@
 import * as vscode from 'vscode'
-import { TextDocument } from "vscode"
-import { parseLatte } from "./DumbLatteParser/parser"
-import DefaultTag from "./DumbLatteParser/Tags/DefaultTag"
-import VarTag from "./DumbLatteParser/Tags/VarTag"
-import VarTypeTag from "./DumbLatteParser/Tags/VarTypeTag"
-import RuntimeCache from "./utils/RuntimeCache"
-import { PhpType } from "./TypeParser/typeParser"
-import { isInstanceOf, narrowType } from "./utils/utils"
-import { debugMessage } from "./utils/utils.vscode"
+import { TextDocument } from 'vscode'
+import { parseLatte } from './DumbLatteParser/parser'
+import DefaultTag from './DumbLatteParser/Tags/DefaultTag'
+import VarTag from './DumbLatteParser/Tags/VarTag'
+import VarTypeTag from './DumbLatteParser/Tags/VarTypeTag'
+import RuntimeCache from './utils/RuntimeCache'
+import { PhpType } from './TypeParser/typeParser'
+import { isInstanceOf, narrowType } from './utils/utils'
+import { debugMessage, getPositionAtOffset } from './utils/utils.vscode'
 import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
 
-
 export interface VariableInfo {
-	name: string,
-	type: PhpType | null,
-	definedAt: vscode.Position | null,
+	name: string
+	type: PhpType | null
+	definedAt: vscode.Position | null
 }
 
-
 type VariableDefinitions = Map<string, VariableInfo[]>
-
 
 export interface LatteFileInfo {
 	variables: VariableDefinitions
 }
 
-
 export class LatteTagsProcessor {
-
-	public static scan(doc: TextDocument): LatteFileInfo {
-		const msg = debugMessage("Scanning Latte document")
+	public static async scan(doc: TextDocument): Promise<LatteFileInfo> {
+		const msg = debugMessage('Scanning Latte document')
 
 		const parsed = parseLatte(doc.getText())
 		const varDefs = new Map<string, VariableInfo[]>()
@@ -37,11 +32,11 @@ export class LatteTagsProcessor {
 		for (let tag of parsed) {
 			if (isInstanceOf(tag, VarTag, VarTypeTag, DefaultTag)) {
 				narrowType<VarTag | VarTypeTag | DefaultTag>(tag)
-				this.processVariableTags(varDefs, tag)
+				await this.processVariableTags(varDefs, tag, doc)
 			}
 			if (isInstanceOf(tag, ForeachTag)) {
 				narrowType<ForeachTag>(tag)
-				this.processForeachTag(varDefs, tag)
+				await this.processForeachTag(varDefs, tag, doc)
 			}
 		}
 
@@ -50,20 +45,17 @@ export class LatteTagsProcessor {
 		return {
 			variables: varDefs,
 		}
-
 	}
 
-	private static processVariableTags(
+	private static async processVariableTags(
 		varDefs: Map<string, VariableInfo[]>,
 		tag: VarTag | VarTypeTag | DefaultTag,
-	): void {
+		doc: vscode.TextDocument,
+	): VoidPromise {
 		const varInfo: VariableInfo = {
-			name: tag.name,
-			type: tag.type,
-			definedAt: new vscode.Position(
-				tag.range.start.line,
-				tag.range.start.character,
-			),
+			name: tag.varName,
+			type: tag.varType,
+			definedAt: await getPositionAtOffset(tag.nameOffset, doc),
 		}
 
 		// We're interested in gathering types, so don't overwrite
@@ -81,16 +73,14 @@ export class LatteTagsProcessor {
 		varDefs.get(varInfo.name)?.push(varInfo)
 	}
 
-	private static processForeachTag(
+	private static async processForeachTag(
 		varDefs: Map<string, VariableInfo[]>,
 		tag: ForeachTag,
-	): void {
-		const varName = tag.iteratesAsVariableName
-		const iterableVarName = tag.iteratesVariableName
-		const position = new vscode.Position(
-			tag.range.start.line,
-			tag.range.start.character,
-		)
+		doc: vscode.TextDocument,
+	): VoidPromise {
+		const varName = tag.iteratesAsVarName
+		const iterableVarName = tag.iteratesVarName
+		const position = await getPositionAtOffset(tag.tagRange.startOffset, doc)
 
 		const iterableType = LatteFileInfoProvider.findVariableInfo(
 			varDefs,
@@ -110,11 +100,9 @@ export class LatteTagsProcessor {
 
 		varDefs.get(varInfo.name)?.push(varInfo)
 	}
-
 }
 
 export class LatteFileInfoProvider {
-
 	cache: RuntimeCache<TextDocument, LatteFileInfo>
 
 	public constructor() {
@@ -126,7 +114,7 @@ export class LatteFileInfoProvider {
 	}
 
 	private async rescanFile(doc: TextDocument): Promise<LatteFileInfo> {
-		const docInfo = LatteTagsProcessor.scan(doc)
+		const docInfo = await LatteTagsProcessor.scan(doc)
 		this.cache.set(doc, docInfo)
 		return docInfo
 	}
@@ -141,7 +129,11 @@ export class LatteFileInfoProvider {
 			docInfo = await this.rescanFile(doc)
 		}
 
-		return LatteFileInfoProvider.findVariableInfo(docInfo.variables, varName, position)
+		return LatteFileInfoProvider.findVariableInfo(
+			docInfo.variables,
+			varName,
+			position,
+		)
 	}
 
 	public static findVariableInfo(
@@ -161,9 +153,9 @@ export class LatteFileInfoProvider {
 				return varDef.definedAt
 					? position.isAfterOrEqual(varDef.definedAt)
 					: false
-			})
+			},
+		)
 
 		return foundDefinition ?? null
 	}
-
 }

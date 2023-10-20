@@ -1,5 +1,3 @@
-
-
 export class KeyedCircularBuffer<K, V> {
 	size: number
 	items: Map<K, V>
@@ -7,7 +5,7 @@ export class KeyedCircularBuffer<K, V> {
 	constructor(size: number) {
 		this.size = Math.round(size)
 		if (this.size < 1) {
-			throw Error("KeyedCircularBuffer size must be greater than 1")
+			throw Error('KeyedCircularBuffer size must be greater than 1')
 		}
 
 		this.items = new Map()

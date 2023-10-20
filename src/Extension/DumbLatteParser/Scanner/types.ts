@@ -1,4 +1,4 @@
-import Stack from "../../utils/Stack"
+import Stack from '../../utils/Stack'
 
 export const enum RegionType {
 	HTML = 'html',
@@ -15,4 +15,13 @@ export interface ScannerState {
 	maxOffset: number
 	lastLatteOpenTagOffset: number
 	regionTypeStack: Stack<RegionType>
+}
+
+export type DumbTagConstructorArgs = {
+	name: string
+	nameOffset: integer
+	args: string
+	argsOffset: integer
+	tagRange: { startOffset: integer; endOffset: integer }
+	regionType: RegionType
 }

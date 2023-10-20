@@ -1,12 +1,10 @@
 import * as vscode from 'vscode'
 import RuntimeCache from './utils/RuntimeCache'
 import { statusBarMessage } from './utils/utils.vscode'
-import { parsePhp } from './PhpParser/parser'
-import { PhpClassInfo } from './PhpParser/types'
-
+import { parsePhp } from './DumbPhpParser/parser'
+import { PhpClassInfo } from './DumbPhpParser/types'
 
 export class PhpWorkspaceInfoProvider {
-
 	cache: RuntimeCache<vscode.TextDocument, any>
 	classMap: Map<string, PhpClassInfo>
 
@@ -19,15 +17,16 @@ export class PhpWorkspaceInfoProvider {
 		}
 	}
 
-	private async scanWorkspace(): Promise<void> {
-		let message = statusBarMessage("$(sync~spin) Scanning workspace for PHP files")
+	private async scanWorkspace(): VoidPromise {
+		let message = statusBarMessage('$(sync~spin) Scanning workspace for PHP files')
 
-		const phpFiles = await vscode
-			.workspace
-			.findFiles('**/*.php', '**/{node_modules,temp,log,vendor}/**')
+		const phpFiles = await vscode.workspace.findFiles(
+			'**/*.php',
+			'**/{node_modules,temp,log,vendor}/**',
+		)
 
 		message.dispose()
-		message = statusBarMessage("$(sync~spin) Scanning class definitions in PHP files")
+		message = statusBarMessage('$(sync~spin) Scanning class definitions in PHP files')
 
 		// We need to keep track of the original URI of the file so we can
 		// tell the parser in which file the classes it finds are.
@@ -36,9 +35,9 @@ export class PhpWorkspaceInfoProvider {
 			uriThenables.set(uri, vscode.workspace.fs.readFile(uri))
 		}
 
-		for (const [ uri, uriThenable ] of uriThenables) {
+		for (const [uri, uriThenable] of uriThenables) {
 			const bytes = await uriThenable
-		 	const classes = await parsePhp(bytes.toString(), uri)
+			const classes = await parsePhp(bytes.toString(), uri)
 			for (const cls of classes) {
 				this.classMap.set(cls.fqn, cls)
 			}
@@ -46,5 +45,4 @@ export class PhpWorkspaceInfoProvider {
 
 		message.dispose()
 	}
-
 }

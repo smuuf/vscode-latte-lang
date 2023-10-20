@@ -1,6 +1,11 @@
 import * as vscode from 'vscode'
-import { BalancedCaptureResult, ParsingContext, PhpClassInfo, PhpMethodInfo } from "./types"
-import { makePositionsComplete } from "./utils"
+import {
+	BalancedCaptureResult,
+	ParsingContext,
+	PhpClassInfo,
+	PhpClassMethods,
+	PhpMethodInfo,
+} from './types'
 
 const NS_SEP = '\\'
 const NS_REGEX = /namespace\s+([^;]+);/
@@ -8,7 +13,15 @@ const NS_REGEX = /namespace\s+([^;]+);/
 const CLASS_REGEX = /class\s+([^\s]+)\s*/
 const FUNCTION_REGEX = /function\s+([^\s]+)\s*\(/
 
-
+/**
+ * Starts scanning of the input string at specified offset and returns
+ * content and offset (inside the input string) between two specified delimiters
+ * that are found following the starting offset.
+ *
+ * For example "hello how {? are you}" with starting offset 3 (well before the
+ * first delimiter) will return "? are you" with offset 11 (right after the
+ * first delimiter).
+ */
 // Export for testing.
 export function captureBalanced(
 	delimiter: [string, string],
@@ -24,6 +37,10 @@ export function captureBalanced(
 	let insideStartOffset: number | null = null
 	const leftDel: string = delimiter[0]
 	const rightDel: string = delimiter[1]
+
+	if (leftDel.length !== 1 || rightDel.length !== 1) {
+		throw new Error('Both delimiters must be single-charater strings')
+	}
 
 	let counter = 0
 
@@ -49,7 +66,6 @@ export function captureBalanced(
 		}
 
 		offset++
-
 	}
 
 	if (counter) {
@@ -58,9 +74,7 @@ export function captureBalanced(
 	}
 
 	return null
-
 }
-
 
 /**
  * Scans the PHP source string for namespace declaration and returns it as
@@ -86,41 +100,32 @@ export function detectNamespace(source: string): string {
 	return ns
 }
 
-
 function extractMethods(
 	source: string | null,
 	startOffset: number,
 	parsingContext: ParsingContext,
-): PhpMethodInfo[] {
+): PhpClassMethods | null {
 	if (!source) {
-		return []
+		return null
 	}
 
-	const methods: PhpMethodInfo[] = []
+	const methods: PhpClassMethods = new Map()
 	const methodRegex = new RegExp(FUNCTION_REGEX.source, 'g')
 	const matches = source.matchAll(methodRegex)
 
 	for (const match of matches) {
 		const where = match.index!
+		const methodName = match[1]
 		const methodDef = {
-			name: match[1],
-			position: {
-				offset: startOffset + where,
-				line: null,
-				character: null,
-			}, // Incomplete position.
+			name: methodName,
+			offset: startOffset + where + 9, // Add the length of string "function ".
 		} as PhpMethodInfo
 
-		// Collect the incomplete positions so we can make them complete later
-		// effectively (all at once within a single file).
-		parsingContext.incompletePositions.push(methodDef.position)
-
-		methods.push(methodDef)
+		methods.set(methodName, methodDef)
 	}
 
 	return methods
 }
-
 
 // Export for testing.
 export function extractClasses(
@@ -136,8 +141,8 @@ export function extractClasses(
 	const matches = source.matchAll(classRegex)
 
 	for (const match of matches) {
-		const where = match.index!
-		const classBody = captureBalanced(["{", "}"], source, where)
+		const where = match.index! + 6 // Add length of string "class ".
+		const classBody = captureBalanced(['{', '}'], source, where)
 		const name: string = match[1]
 
 		const classDef = {
@@ -151,24 +156,15 @@ export function extractClasses(
 			),
 			location: {
 				uri: parsingContext.uri,
-				position: {
-					offset: where,
-					line: null,
-					character: null,
-				}, // Incomplete position.
+				offset: where,
 			},
 		} as PhpClassInfo
-
-		// Collect the incomplete positions so we can make them complete later
-		// effectively (all at once within a single file).
-		parsingContext.incompletePositions.push(classDef.location.position)
 
 		classes.push(classDef)
 	}
 
 	return classes as unknown as PhpClassInfo[]
 }
-
 
 export async function parsePhp(
 	source: string,
@@ -178,12 +174,8 @@ export async function parsePhp(
 
 	const parsingContext = {
 		namespace: ns,
-		incompletePositions: [],
 		uri: uri,
 	}
 
-	const classes = extractClasses(source, parsingContext)
-	makePositionsComplete(parsingContext.incompletePositions, source)
-
-	return classes
+	return extractClasses(source, parsingContext)
 }

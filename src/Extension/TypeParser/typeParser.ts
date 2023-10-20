@@ -1,8 +1,8 @@
-import { lruCache } from "../utils/lruCache.js"
-import * as parser from "./parser.js"
+import { lruCache } from '../utils/lruCache.js'
+import * as parser from './parser.js'
 
 //
-// BEWARE! This is a pretty chaotically botched up module just so it _somehow_
+// BEWARE! This is a pretty chaotically put together module just so it _somehow_
 // works as expected.
 //
 
@@ -10,18 +10,17 @@ export type PhpType = SingleType | UnionType
 
 type UnionType = {
 	types: SingleType[]
-	repr: string,
+	repr: string
 	iteratesAs: IterationSpec
 	nullable: boolean
 }
-type IterationSpec = null | {value: PhpType} | {key: PhpType, value: PhpType}
+type IterationSpec = null | { value: PhpType } | { key: PhpType; value: PhpType }
 type SingleType = {
-	name: string,
-	repr: string,
+	name: string
+	repr: string
 	iteratesAs: IterationSpec
 	nullable: boolean
 }
-
 
 const BASIC_ITERABLES = [
 	'array',
@@ -32,11 +31,7 @@ const BASIC_ITERABLES = [
 	'\\Generator',
 ]
 
-
-function determineIterationItem(
-	typeName: string,
-	template: any[],
-): IterationSpec {
+function determineIterationItem(typeName: string, template: any[]): IterationSpec {
 	// Support for:
 	// 1. (array|\ArrayAccess|\Iterator|\Traversable)<valueType>
 	// 2. (array|\ArrayAccess|\Iterator|\Traversable)<keyType, valueType>
@@ -91,13 +86,15 @@ function processTypeAst(typeAst: any): PhpType {
 
 	// Convert "myType[]" to "array<MyType>"".
 	if (typeAst.list) {
-		typeAst.template = [{
-			type: typeAst.type,
-			template: null,
-			list: false,
-			union: null,
-			nullable: typeAst.nullable || false,
-		}]
+		typeAst.template = [
+			{
+				type: typeAst.type,
+				template: null,
+				list: false,
+				union: null,
+				nullable: typeAst.nullable || false,
+			},
+		]
 		typeAst.type = 'array'
 	}
 
@@ -109,8 +106,7 @@ function processTypeAst(typeAst: any): PhpType {
 	}
 }
 
-
-const parsePhpType = lruCache((input: string): null | PhpType => {
+const parsePhpType = lruCache((input: string): PhpType | null => {
 	try {
 		return processTypeAst(parser.parse(input))
 	} catch {

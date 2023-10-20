@@ -7,7 +7,7 @@ export function isInstanceOf(subject: object, ...types: any[]): boolean {
 }
 
 export function isString(subject: any): boolean {
-	return typeof(subject) === 'string' || subject instanceof String
+	return typeof subject === 'string' || subject instanceof String
 }
 
 /**
@@ -15,7 +15,13 @@ export function isString(subject: any): boolean {
  */
 export function narrowType<T>(subject: any): asserts subject is T {}
 
+/**
+ * Takes an iterable containing strings and returns a sum of their lengths.
+ */
+export function sumStringLength<T>(items: Iterable<string>): integer {
+	return [...items].reduce((acc: integer, cur: string): integer => cur.length, 0)
+}
 
 export function dump(thing: any): void {
-	console.dir(thing, {depth: 10})
+	console.dir(thing, { depth: 10 })
 }

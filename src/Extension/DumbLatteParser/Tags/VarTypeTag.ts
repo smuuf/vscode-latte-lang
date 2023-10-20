@@ -1,23 +1,28 @@
-import { parsePhpType, PhpType } from "../../TypeParser/typeParser"
-import { isValidTypeSpec, isValidVariableName } from "../regexes"
-import DumbTag from "../Scanner/DumbTag"
-import { Range, AbstractTag } from "../types"
-
+import { parsePhpType, PhpType } from '../../TypeParser/typeParser'
+import { isValidTypeSpec, isValidVariableName } from '../regexes'
+import DumbTag from '../Scanner/DumbTag'
+import { Range, AbstractTag } from '../types'
 
 export default class VarTypeTag extends AbstractTag {
-
 	public static readonly DUMB_NAME = 'varType'
 
 	constructor(
-		readonly name: string,
-		readonly range: Range,
-		readonly type: PhpType,
+		readonly varName: string,
+		readonly tagRange: Range,
+		readonly varType: PhpType,
+		readonly nameOffset: integer,
 	) {
 		super()
 	}
 
 	static fromDumbTag(dumbTag: DumbTag): VarTypeTag | null {
-		const tailParts = dumbTag.tail.split(/\s+/)
+		const tailParts = dumbTag.args.split(/\s+/, 10) // Generous limit.
+		const nameOffset = dumbTag.args.indexOf('$')
+
+		// Doesn't contain a variable name.
+		if (nameOffset === -1) {
+			return null
+		}
 
 		// Invalid {varType ...} structure - has too many arguments.
 		if (tailParts.length !== 2) {
@@ -38,9 +43,9 @@ export default class VarTypeTag extends AbstractTag {
 
 		return new this(
 			tailParts[1],
-			dumbTag.range,
+			dumbTag.tagRange,
 			parsePhpType(tailParts[0])!,
+			dumbTag.argsOffset + nameOffset,
 		)
 	}
-
 }
