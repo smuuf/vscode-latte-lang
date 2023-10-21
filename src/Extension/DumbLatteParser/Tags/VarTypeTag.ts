@@ -1,4 +1,4 @@
-import { parsePhpType, PhpType } from '../../TypeParser/typeParser'
+import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { isValidTypeSpec, isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
 import { Range, AbstractTag } from '../types'

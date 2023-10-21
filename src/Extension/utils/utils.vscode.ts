@@ -1,6 +1,5 @@
 import * as vscode from 'vscode'
 import config from '../../config'
-import { isInstanceOf, narrowType } from './utils'
 import { lruCache } from './lruCache'
 
 const debugMessage = config.debugging

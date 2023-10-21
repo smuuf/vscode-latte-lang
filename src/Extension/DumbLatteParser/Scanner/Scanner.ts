@@ -62,7 +62,7 @@ export class Scanner {
 					// If in HTML tag and the "n" is followed by ":" ...
 					if (
 						this.source[state.offset + 1] === ':' &&
-						this.state.regionTypeStack.top() === RegionType.HTML_TAG
+						this.state.regionTypeStack.getTop() === RegionType.HTML_TAG
 					) {
 						state.offset += 2
 						this.collectNLatteTag()
@@ -85,6 +85,11 @@ export class Scanner {
 			}
 		}
 
+		if (this.state.regionTypeStack.getSize() !== 1) {
+			const topRegion = this.state.regionTypeStack.getTop()
+			this.error(`Missing end of ${topRegion} region`)
+		}
+
 		return this.tags
 	}
 
@@ -94,7 +99,7 @@ export class Scanner {
 	}
 
 	private openLatteTag(): void {
-		this.enterRegion(RegionType.LATTE)
+		this.enterRegion(RegionType.LATTE_TAG)
 		this.state.lastLatteOpenTagOffset = this.state.offset
 	}
 
@@ -216,7 +221,7 @@ export class Scanner {
 			args: tagArgs,
 			argsOffset: originalState.offset + tagName.length + 2, // Length of '="' which are in front of the args.
 			tagRange: { startOffset, endOffset },
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		} as DumbTagConstructorArgs)
 
 		this.tags.push(dumbTag)
@@ -251,13 +256,13 @@ export class Scanner {
 				args: args,
 				argsOffset: nameOffset + tagName.length + sep.length,
 				tagRange: { startOffset, endOffset },
-				regionType: RegionType.LATTE,
+				regionType: RegionType.LATTE_TAG,
 			} as DumbTagConstructorArgs)
 
 			this.tags.push(dumbTag)
 		}
 
-		this.exitRegion(RegionType.LATTE)
+		this.exitRegion(RegionType.LATTE_TAG)
 	}
 
 	private openHtmlTag(): void {
@@ -269,7 +274,7 @@ export class Scanner {
 	}
 
 	private handleQuotesDouble(): void {
-		if (this.state.regionTypeStack.top() === RegionType.QUOTES_D) {
+		if (this.state.regionTypeStack.getTop() === RegionType.QUOTES_D) {
 			this.exitRegion(RegionType.QUOTES_D)
 		} else {
 			this.enterRegion(RegionType.QUOTES_D)
@@ -277,7 +282,7 @@ export class Scanner {
 	}
 
 	private handleQuotesSingle(): void {
-		if (this.state.regionTypeStack.top() === RegionType.QUOTES_S) {
+		if (this.state.regionTypeStack.getTop() === RegionType.QUOTES_S) {
 			this.exitRegion(RegionType.QUOTES_S)
 		} else {
 			this.enterRegion(RegionType.QUOTES_S)
@@ -290,7 +295,7 @@ export class Scanner {
 		}
 
 		if (!isRegionTransferAllowed(regionType, this.state.regionTypeStack)) {
-			const currentRegionType = this.state.regionTypeStack.top()
+			const currentRegionType = this.state.regionTypeStack.getTop()
 			this.error(
 				`Unexpected change of region type from '${currentRegionType}' into '${regionType}'`,
 			)
@@ -300,7 +305,7 @@ export class Scanner {
 	}
 
 	private exitRegion(regionType: RegionType): void {
-		if (!this.state.regionTypeStack.size()) {
+		if (!this.state.regionTypeStack.getSize()) {
 			this.error('Region type stack is empty - cannot exit region type')
 		}
 
@@ -308,7 +313,7 @@ export class Scanner {
 			return
 		}
 
-		if (this.state.regionTypeStack.top() !== regionType) {
+		if (this.state.regionTypeStack.getTop() !== regionType) {
 			this.error(`Trying to exit non-entered region type '${regionType}'`)
 		}
 

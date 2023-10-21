@@ -1,4 +1,4 @@
-import { KeyedCircularBuffer } from '../src/Extension/utils/KeyedCircularBuffer'
+import { KeyedCircularBuffer } from '../KeyedCircularBuffer'
 
 test('Keyed circular buffer', () => {
 	const b = new KeyedCircularBuffer(3)

@@ -1,9 +1,8 @@
-import { extractClasses, detectNamespace } from '../../src/Extension/DumbPhpParser/parser'
-import { dump } from '../../src/Extension/utils/utils'
-import { readDataFile } from '../utils'
+import { extractClasses, detectNamespace } from '../parser'
+import { readTestDataFile } from '../../../tests/testUtils'
 
 test('Detect namespace', () => {
-	const str = readDataFile(`SomeClass.php`, __dirname)
+	const str = readTestDataFile(`SomeClass.php`)
 	let result: string | null
 
 	result = detectNamespace(str)
@@ -14,7 +13,7 @@ test('Detect namespace', () => {
 })
 
 test('Detect classes', () => {
-	const str = readDataFile(`SomeClass.php`, __dirname)
+	const str = readTestDataFile(`SomeClass.php`)
 	let result: any
 
 	result = extractClasses(str, {

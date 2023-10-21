@@ -1,9 +1,7 @@
-import { parsePhpType } from "../../src/Extension/TypeParser/typeParser"
-import { dump } from "../../src/Extension/utils/utils"
-
+import { parsePhpType } from '../phpTypeParser'
+import { dump } from '../../utils/utils'
 
 test('Test parsing of PHP-like type hints: Basics', () => {
-
 	expect(parsePhpType('ahoj')).toEqual({
 		name: 'ahoj',
 		repr: 'ahoj',
@@ -48,7 +46,8 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 				repr: 'ahoj',
 				iteratesAs: null,
 				nullable: false,
-			}, {
+			},
+			{
 				name: 'vole',
 				repr: 'vole',
 				iteratesAs: null,
@@ -67,12 +66,14 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 				repr: 'ahoj<blazne>',
 				iteratesAs: null,
 				nullable: false,
-			}, {
+			},
+			{
 				name: 'vole',
 				repr: 'vole',
 				iteratesAs: null,
 				nullable: false,
-			}, {
+			},
+			{
 				name: 'array',
 				repr: 'array<kamarade>',
 				iteratesAs: {
@@ -90,7 +91,6 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 		iteratesAs: null,
 		nullable: false,
 	})
-
 })
 
 test('Nullable types', () => {
@@ -110,7 +110,7 @@ test('Nullable types', () => {
 				repr: 'int',
 				iteratesAs: null,
 				nullable: false,
-			}
+			},
 		},
 		nullable: true,
 	})
@@ -124,7 +124,7 @@ test('Nullable types', () => {
 				repr: 'int',
 				iteratesAs: null,
 				nullable: true,
-			}
+			},
 		},
 		nullable: true,
 	})
@@ -145,7 +145,6 @@ const WELL_KNOWN_ITERABLES = [
 
 for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 	test(`Test parsing of PHP-like type hints: Basic iterable: ${wellKnownIterable}<V>`, () => {
-
 		expect(parsePhpType(`${wellKnownIterable}<chuligane>`)).toEqual({
 			name: `${wellKnownIterable}`,
 			repr: `${wellKnownIterable}<chuligane>`,
@@ -159,14 +158,11 @@ for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 			},
 			nullable: false,
 		})
-
 	})
 }
 
-
 for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 	test(`Test parsing of PHP-like type hints: Basic iterable: ${wellKnownIterable}<K, V>`, () => {
-
 		expect(parsePhpType(`${wellKnownIterable}<string, chuligane>`)).toEqual({
 			name: `${wellKnownIterable}`,
 			repr: `${wellKnownIterable}<string, chuligane>`,
@@ -182,10 +178,9 @@ for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 					repr: 'chuligane',
 					iteratesAs: null,
 					nullable: false,
-				}
+				},
 			},
 			nullable: false,
 		})
-
 	})
 }

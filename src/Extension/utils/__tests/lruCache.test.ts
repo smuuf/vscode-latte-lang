@@ -1,4 +1,4 @@
-import { lruCache } from '../src/Extension/utils/lruCache'
+import { lruCache } from '../lruCache'
 
 test('lruCache', () => {
 	const fired: any[] = []

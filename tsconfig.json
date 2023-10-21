@@ -109,8 +109,9 @@
   "include": ["src/**/*", "src/global.d.ts"],
   "exclude": [
     "./lsp/*",
-    "node_modules/*",
-    "./tests/*",
-    "./dist/*",
+    "./node_modules/*",
+    "./src/tests/*",
+    "./**/*.test.{ts,js}",
+    "./**/__tests/*"
   ]
 }

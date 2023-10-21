@@ -1,16 +1,20 @@
 {
   "name": "latte-lang",
   "publisher": "smuuf",
-  "displayName": "Latte",
+  "displayName": "Latte templates",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smuuf/vscode-latte-lang"
+  },
   "description": "Support for Latte (Nette) template files.",
   "version": "0.0.1",
   "scripts": {
     "test": "bun test",
-    "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
+    "clear-build": "rm -rf ./out/*",
+    "vscode:prepublish": "npm run clear-build && npm run esbuild-base -- --minify",
+    "esbuild-base": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
     "esbuild": "npm run esbuild-base -- --sourcemap",
-    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch",
-    "test-compile": "tsc -p ./"
+    "esbuild-watch": "npm run esbuild-base -- --sourcemap --watch"
   },
   "engines": {
     "vscode": "^1.82.0"
@@ -79,13 +83,12 @@
     "completionProvider": true
   },
   "devDependencies": {
+    "@types/jest": "^29.5.6",
     "@types/node": "^20.6.2",
     "@types/vscode": "^1.82.0",
-    "@types/jest": "^29.5.6",
+    "@vscode/vsce": "^2.21.1",
+    "esbuild": "^0.19.5",
     "ts-node": "^10.9.1",
     "typescript": "^5.2.2"
-  },
-  "dependencies": {
-    "vscode-languageclient": "^9.0.0"
   }
 }

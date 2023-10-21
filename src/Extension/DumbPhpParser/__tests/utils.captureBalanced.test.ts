@@ -1,6 +1,6 @@
-import { captureBalanced } from '../../src/Extension/DumbPhpParser/parser'
-import { BalancedCaptureResult } from '../../src/Extension/DumbPhpParser/types'
-import { readDataFile } from '../utils'
+import { readTestDataFile } from '../../../tests/testUtils'
+import { BalancedCaptureResult } from '../types'
+import { captureBalanced } from '../utils'
 
 const EXPECTED_1 = `use SmartObject;
 
@@ -23,7 +23,7 @@ const EXPECTED_1 = `use SmartObject;
 const EXPECTED_2 = `private EntityFileSystemService $entityFileSystemService,`
 
 test('captureBalanced', () => {
-	const str = readDataFile(`SomeClass.php`, __dirname)
+	const str = readTestDataFile(`SomeClass.php`)
 	let result: BalancedCaptureResult | null
 
 	result = captureBalanced(['{', '}'], str, 0)

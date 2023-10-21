@@ -1,4 +1,4 @@
-import { parsePhpType } from '../TypeParser/typeParser'
+import { parsePhpType } from '../phpTypeParser/phpTypeParser'
 
 /**
  * Regex of a valid "name" (in php-src called "label").

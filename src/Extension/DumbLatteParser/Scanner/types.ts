@@ -3,9 +3,9 @@ import Stack from '../../utils/Stack'
 export const enum RegionType {
 	HTML = 'html',
 	HTML_TAG = 'html_tag',
-	LATTE = 'latte',
-	QUOTES_S = 'quotes_s',
-	QUOTES_D = 'quotes_d',
+	LATTE_TAG = 'latte_tag',
+	QUOTES_S = 'quotes_single',
+	QUOTES_D = 'quotes_double',
 }
 
 export interface ScannerState {

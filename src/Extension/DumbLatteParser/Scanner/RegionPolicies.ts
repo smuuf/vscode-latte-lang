@@ -9,10 +9,10 @@ type TransferDefinition = {
 const allowedTransfers: TransferDefinition = {
 	[RegionType.HTML_TAG]: [
 		RegionType.HTML,
-		[RegionType.QUOTES_S, RegionType.LATTE],
-		[RegionType.QUOTES_D, RegionType.LATTE],
+		[RegionType.QUOTES_S, RegionType.LATTE_TAG],
+		[RegionType.QUOTES_D, RegionType.LATTE_TAG],
 	],
-	[RegionType.LATTE]: [
+	[RegionType.LATTE_TAG]: [
 		RegionType.HTML,
 		RegionType.HTML_TAG,
 		[RegionType.QUOTES_S, RegionType.HTML_TAG],
@@ -22,29 +22,21 @@ const allowedTransfers: TransferDefinition = {
 		RegionType.HTML,
 		RegionType.HTML_TAG,
 		RegionType.QUOTES_D,
-		RegionType.LATTE,
+		RegionType.LATTE_TAG,
 	],
 	[RegionType.QUOTES_D]: [
 		RegionType.HTML,
 		RegionType.HTML_TAG,
 		RegionType.QUOTES_S,
-		RegionType.LATTE,
+		RegionType.LATTE_TAG,
 	],
 }
 
 const ignoredTransfers: TransferDefinition = {
-	[RegionType.QUOTES_S]: [
-		RegionType.QUOTES_D,
-		RegionType.LATTE,
-		RegionType.HTML,
-	],
-	[RegionType.QUOTES_D]: [
-		RegionType.QUOTES_S,
-		RegionType.LATTE,
-		RegionType.HTML,
-	],
+	[RegionType.QUOTES_S]: [RegionType.QUOTES_D, RegionType.LATTE_TAG, RegionType.HTML],
+	[RegionType.QUOTES_D]: [RegionType.QUOTES_S, RegionType.LATTE_TAG, RegionType.HTML],
 	[RegionType.HTML_TAG]: [
-		RegionType.LATTE,
+		RegionType.LATTE_TAG,
 		[RegionType.QUOTES_S, RegionType.HTML_TAG],
 		[RegionType.QUOTES_D, RegionType.HTML_TAG],
 	],
@@ -84,7 +76,7 @@ function previousRegionsMatch(
 	needle: RegionType | RegionType[],
 	stack: Stack<RegionType>,
 ): boolean {
-	if (!stack.size()) {
+	if (!stack.getSize()) {
 		return false
 	}
 
@@ -92,7 +84,7 @@ function previousRegionsMatch(
 	// items in our region-type stack - if they match items in the needle.
 	if (Array.isArray(needle)) {
 		for (let i = 0; i < needle.length; i++) {
-			if (needle[i] !== stack.top(i)) {
+			if (needle[i] !== stack.getTop(i)) {
 				// Current region-type in traversed region-type stack
 				// doesn't match with the corresponding item in needle.
 				// No match.
@@ -104,5 +96,5 @@ function previousRegionsMatch(
 	}
 
 	// Needle is a string, simply compare the top item in the stack with it.
-	return stack.top() === needle
+	return stack.getTop() === needle
 }

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { parsePhpType } from './TypeParser/typeParser'
+import { parsePhpType } from './phpTypeParser/phpTypeParser'
 import { LatteFileInfoProvider } from './LatteFileInfoProvider'
 import { PhpWorkspaceInfoProvider } from './PhpWorkspaceInfoProvider'
 import { DefinitionProviderAggregator } from './DefinitionProviders'

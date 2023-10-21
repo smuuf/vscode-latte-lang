@@ -1,10 +1,10 @@
-import DumbTag from '../../src/Extension/DumbLatteParser/Scanner/DumbTag'
-import { Scanner } from '../../src/Extension/DumbLatteParser/Scanner/Scanner'
-import { RegionType } from '../../src/Extension/DumbLatteParser/Scanner/types'
-import { readDataFile } from '../utils'
+import { readTestDataFile } from '../../../../tests/testUtils'
+import DumbTag from '../DumbTag'
+import { Scanner } from '../Scanner'
+import { RegionType } from '../types'
 
 test('Test basic scanner properties', () => {
-	const scanner = new Scanner(readDataFile('justString.txt'))
+	const scanner = new Scanner(readTestDataFile('justString.txt'))
 	// Nice little trick with array access - gives us access to private fields
 	// of the Scanner object.
 	const state = scanner['state']
@@ -27,7 +27,7 @@ test('Test basic scanner properties', () => {
 })
 
 test('Simple template scan', () => {
-	const scanner = new Scanner(readDataFile('simple.latte'))
+	const scanner = new Scanner(readTestDataFile('simple.latte'))
 	const result = scanner.scan()
 
 	const expected = [
@@ -40,7 +40,7 @@ test('Simple template scan', () => {
 				startOffset: 0,
 				endOffset: 11,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: 'var',
@@ -51,7 +51,7 @@ test('Simple template scan', () => {
 				startOffset: 13,
 				endOffset: 29,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: 'varType',
@@ -62,7 +62,7 @@ test('Simple template scan', () => {
 				startOffset: 30,
 				endOffset: 66,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: '$prvni',
@@ -73,7 +73,7 @@ test('Simple template scan', () => {
 				startOffset: 77,
 				endOffset: 84,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: '$druhy',
@@ -84,7 +84,7 @@ test('Simple template scan', () => {
 				startOffset: 86,
 				endOffset: 93,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: 'default',
@@ -95,7 +95,7 @@ test('Simple template scan', () => {
 				startOffset: 101,
 				endOffset: 121,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: 'default',
@@ -106,7 +106,7 @@ test('Simple template scan', () => {
 				startOffset: 122,
 				endOffset: 150,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: 'foreach',
@@ -117,7 +117,7 @@ test('Simple template scan', () => {
 				startOffset: 152,
 				endOffset: 176,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: '$sesty',
@@ -128,7 +128,7 @@ test('Simple template scan', () => {
 				startOffset: 179,
 				endOffset: 186,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: '/foreach',
@@ -139,7 +139,7 @@ test('Simple template scan', () => {
 				startOffset: 188,
 				endOffset: 197,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: 'foreach',
@@ -150,7 +150,7 @@ test('Simple template scan', () => {
 				startOffset: 206,
 				endOffset: 230,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: '$osmy',
@@ -161,7 +161,7 @@ test('Simple template scan', () => {
 				startOffset: 253,
 				endOffset: 259,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 		new DumbTag({
 			name: '$devaty',
@@ -172,7 +172,7 @@ test('Simple template scan', () => {
 				startOffset: 261,
 				endOffset: 269,
 			},
-			regionType: RegionType.LATTE,
+			regionType: RegionType.LATTE_TAG,
 		}),
 	]
 
@@ -180,6 +180,6 @@ test('Simple template scan', () => {
 })
 
 test('Smoke test of real template scan', () => {
-	const scanner = new Scanner(readDataFile('real.latte'))
+	const scanner = new Scanner(readTestDataFile('real.latte'))
 	expect(Array.isArray(scanner.scan())).toBeTruthy()
 })

@@ -5,23 +5,23 @@ export default class Stack<T> {
 		this.stack = []
 	}
 
-	size(): number {
+	public getSize(): number {
 		return this.stack.length
 	}
 
-	push(item: T): void {
+	public push(item: T): void {
 		this.stack.push(item)
 	}
 
-	pop(): T | undefined {
+	public pop(): T | undefined {
 		return this.stack.pop() ?? undefined
 	}
 
-	top(deeper: number = 0): T | undefined {
+	public getTop(deeper: number = 0): T | undefined {
 		return this.stack[this.stack.length - 1 - deeper] ?? undefined
 	}
 
-	clear(): void {
+	public clear(): void {
 		this.stack = []
 	}
 }

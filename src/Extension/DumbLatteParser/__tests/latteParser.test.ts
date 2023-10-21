@@ -1,13 +1,13 @@
-import { parseLatte } from '../../src/Extension/DumbLatteParser/Parser'
-import DefaultTag from '../../src/Extension/DumbLatteParser/Tags/DefaultTag'
-import ForeachTag from '../../src/Extension/DumbLatteParser/Tags/ForeachTag'
-import VarTag from '../../src/Extension/DumbLatteParser/Tags/VarTag'
-import VarTypeTag from '../../src/Extension/DumbLatteParser/Tags/VarTypeTag'
-import { parsePhpType } from '../../src/Extension/TypeParser/typeParser'
-import { readDataFile } from '../utils'
+import { readTestDataFile } from '../../../tests/testUtils'
+import { parsePhpType } from '../../phpTypeParser/phpTypeParser'
+import DefaultTag from '../Tags/DefaultTag'
+import ForeachTag from '../Tags/ForeachTag'
+import VarTag from '../Tags/VarTag'
+import VarTypeTag from '../Tags/VarTypeTag'
+import { parseLatte } from '../latteParser'
 
 test('Test parser', () => {
-	const result = parseLatte(readDataFile('simple.latte'))
+	const result = parseLatte(readTestDataFile('simple.latte'))
 
 	const expected = [
 		new VarTag(
