@@ -6,7 +6,7 @@ import { PhpWorkspaceInfoProvider } from './PhpWorkspaceInfoProvider'
 import { DefinitionProviderAggregator } from './DefinitionProviders'
 import { VARIABLE_REGEX } from './regexes'
 import { mapMap } from './utils/utils'
-import { infoMessage } from './utils/utils.vscode'
+import { buildCommandUri, infoMessage } from './utils/utils.vscode'
 
 const LANG_ID = 'latte'
 
@@ -100,12 +100,17 @@ class ExtensionHoverProvider implements vscode.HoverProvider {
 		}
 
 		const md = new vscode.MarkdownString()
-		const tmpVarType = varInfo.type ? varInfo.type.repr : 'mixed'
+		let varStr = varInfo.type ? varInfo.type.repr : 'mixed'
 
-		const hasDefinitionUri =
-			this.extCore.phpWorkspaceInfoProvider.classMap.get(tmpVarType)
-
-		md.appendMarkdown(`_variable_ \`${tmpVarType} ${varInfo.name}\``)
+		const classInfo = this.extCore.phpWorkspaceInfoProvider.classMap.get(varStr)
+		if (classInfo && classInfo.location.uri) {
+			const commandUriStr = buildCommandUri('vscode.open', [classInfo.location.uri])
+			varStr = `[\`${varStr}\`](${commandUriStr})`
+			md.isTrusted = true
+		} else {
+			varStr = `\`${varStr}\``
+		}
+		md.appendMarkdown(`_variable_ ${varStr} \`${varInfo.name}\``)
 
 		return new vscode.Hover(md)
 	}

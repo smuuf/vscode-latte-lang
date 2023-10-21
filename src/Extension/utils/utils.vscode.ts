@@ -13,6 +13,10 @@ function isTextDocument(arg: any): arg is vscode.TextDocument {
 	return (arg.uri || arg.fileName) && arg.languageId !== null
 }
 
+export function buildCommandUri(command: string, args: object): string {
+	return `command:${command}?${encodeURIComponent(JSON.stringify(args))}`
+}
+
 async function getPositionAtOffset(
 	offset: integer,
 	doc: vscode.TextDocument | vscode.Uri | string,

@@ -38,3 +38,7 @@ export function filterMap<K, V>(
 export function mapMap<K, V, RV>(map: Map<K, V>, fn: (k: K, v: V) => RV): Map<K, RV> {
 	return new Map(Array.from(map, ([key, value]) => [key, fn(key, value)]))
 }
+
+export function wrapString(str: string, beforeAfter: [string, string]): string {
+	return `${beforeAfter[0]}${str}${beforeAfter[1]}`
+}
