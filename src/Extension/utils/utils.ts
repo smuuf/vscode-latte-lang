@@ -1,3 +1,5 @@
+import { KeyObject } from 'crypto'
+
 /**
  * Returns true if the first argument A has "instanceof B" evaluated as true
  * with any of the Bs passed as the rest of the arguments.
@@ -24,4 +26,15 @@ export function sumStringLength<T>(items: Iterable<string>): integer {
 
 export function dump(thing: any): void {
 	console.dir(thing, { depth: 10 })
+}
+
+export function filterMap<K, V>(
+	map: Map<K, V>,
+	predicate: (k: K, v: V) => boolean,
+): Map<K, V> {
+	return new Map([...map].filter((item) => predicate(...item)))
+}
+
+export function mapMap<K, V, RV>(map: Map<K, V>, fn: (k: K, v: V) => RV): Map<K, RV> {
+	return new Map(Array.from(map, ([key, value]) => [key, fn(key, value)]))
 }

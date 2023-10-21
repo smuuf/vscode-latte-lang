@@ -3,24 +3,24 @@ import * as vscode from 'vscode'
 import { parsePhpType } from './TypeParser/typeParser'
 import { LatteFileInfoProvider } from './LatteFileInfoProvider'
 import { PhpWorkspaceInfoProvider } from './PhpWorkspaceInfoProvider'
-import { getPositionAtOffset } from './utils/utils.vscode'
+import { DefinitionProviderAggregator } from './DefinitionProviders'
+import { VARIABLE_REGEX } from './regexes'
+import { mapMap } from './utils/utils'
+import { infoMessage } from './utils/utils.vscode'
 
 const LANG_ID = 'latte'
-const VARIABLE_REGEX = new RegExp('\\$[a-zA-Z_][a-zA-Z0-9_]*')
-const CLASS_REGEX = new RegExp(
-	`\\\\?(?:[a-zA-Z_][a-zA-Z0-9_]*)(?:\\\\[a-zA-Z_][a-zA-Z0-9_]*)*`,
-)
-const METHOD_CALL_REGEX = new RegExp(`(\\$[a-zA-Z_][a-zA-Z0-9_]*)->([^\\(]*)`)
 
 export class ExtensionCore {
 	ctx: vscode.ExtensionContext
 	latteFileInfoProvider: LatteFileInfoProvider
 	phpWorkspaceInfoProvider: PhpWorkspaceInfoProvider
+	definitionProvider: DefinitionProviderAggregator
 
 	public constructor(ctx: vscode.ExtensionContext) {
 		this.ctx = ctx
 		this.latteFileInfoProvider = new LatteFileInfoProvider()
 		this.phpWorkspaceInfoProvider = new PhpWorkspaceInfoProvider()
+		this.definitionProvider = new DefinitionProviderAggregator(this)
 	}
 
 	public registerDisposables(): void {
@@ -44,6 +44,12 @@ export class ExtensionCore {
 			vscode.languages.registerDefinitionProvider(
 				LANG_ID,
 				new ExtensionGoToDefinitionProvider(this),
+			),
+			vscode.languages.registerCompletionItemProvider(
+				LANG_ID,
+				new ExtensionCompletionItemProvider(this),
+				'$',
+				'>',
 			),
 		]
 
@@ -114,138 +120,109 @@ class ExtensionGoToDefinitionProvider implements vscode.DefinitionProvider {
 		position: vscode.Position,
 		token: vscode.CancellationToken,
 	): Promise<vscode.Location | vscode.LocationLink[] | null | undefined> {
-		let range = doc.getWordRangeAtPosition(position, VARIABLE_REGEX)
+		return this.extCore.definitionProvider.resolve(doc, position, token)
+	}
+}
 
-		// Hover over a variable name.
-		if (range) {
-			const varName = doc.getText(range)
+class ExtensionCompletionItemProvider implements vscode.CompletionItemProvider {
+	extCore: ExtensionCore
 
-			// The requested symbol is a $variable.
-			if (varName) {
-				const variableInfo =
-					await this.extCore.latteFileInfoProvider.getVariableInfo(
-						doc,
-						varName,
-						position,
-					)
+	public constructor(extCore: ExtensionCore) {
+		this.extCore = extCore
+	}
 
-				if (!variableInfo || !variableInfo.definedAt) {
-					return null
-				}
+	public async provideCompletionItems(
+		doc: vscode.TextDocument,
+		position: vscode.Position,
+		token: vscode.CancellationToken,
+	): Promise<vscode.CompletionItem[] | null> {
+		// Get a few characters that lead to the trigger character, so we
+		// get some context in which we're supposed to provide completions.
+		const triggerString = doc.getText(
+			new vscode.Range(position.translate(0, -2), position),
+		)
 
-				return new vscode.Location(doc.uri, variableInfo.definedAt)
-			}
-		}
-
-		// Hover over a method call.
-		range = doc.getWordRangeAtPosition(position, METHOD_CALL_REGEX)
-		if (range) {
-			const methodCallStr = doc.getText(range)
-			const match = methodCallStr.match(METHOD_CALL_REGEX)
-
-			if (!match) {
-				return null
-			}
-
-			const subjectVarName = match[1] || ''
-			const methodName = match[2] || ''
-
-			if (!subjectVarName) {
-				return
-			}
-			const subjectVarInfo =
-				await this.extCore.latteFileInfoProvider.getVariableInfo(
+		if (triggerString.endsWith('$')) {
+			// Variable completion. E.g. "$...".
+			const varsAtPosition =
+				await this.extCore.latteFileInfoProvider.getVariablesAtPosition(
 					doc,
-					subjectVarName,
 					position,
 				)
-
-			if (!subjectVarInfo || !subjectVarInfo.type || !subjectVarInfo.definedAt) {
+			if (token.isCancellationRequested || !varsAtPosition) {
 				return null
 			}
 
-			let className = subjectVarInfo.type.repr
-			// We store classes under their absolute name, so add "\" if it's missing.
-			if (className[0] !== '\\') {
-				className = `\\${className}`
-			}
+			// Create a list of completion items from variables available/known at
+			// specified position.
+			return Array.from(
+				mapMap(varsAtPosition, (k, v) => {
+					const item = new vscode.CompletionItem(
+						k,
+						vscode.CompletionItemKind.Variable,
+					)
 
-			// The requested symbol is a class name.
-			const classInfo = await this.extCore.phpWorkspaceInfoProvider.classMap.get(
-				className,
+					// Each value of varsAtPosition under a single key (which
+					// represents a variable name) is actually a list of known
+					// definitions of that variable (one variable can be defined
+					// multiple times in the document). Use the last one (that is:
+					// the most actual definition of the variable at specified
+					// position).
+					item.detail = v[v.length - 1].type?.repr
+					item.range = new vscode.Range(position.translate(0, -1), position)
+					return item
+				}).values(),
 			)
-
-			if (!classInfo) {
-				return null
-			}
-
-			const methodInfo = classInfo.methods?.get(methodName)
-			if (!methodInfo || !methodInfo.offset) {
-				return null
-			}
-
-			const uri = classInfo?.location?.uri
-			const offset = methodInfo.offset
-			if (!offset || !uri) {
-				return null
-			}
-
-			// Start from the original range of the hover, but a sub-range of it
-			// encompassing only the method name.
-			const methodNameOffset = methodCallStr.indexOf('->') + 2
-			const originRange = new vscode.Range(
-				range.start.translate(0, methodNameOffset),
-				range.start.translate(0, methodNameOffset + methodName.length),
-			)
-
-			const pos = await getPositionAtOffset(offset, uri)
-			const locationLink: vscode.LocationLink = {
-				targetRange: new vscode.Range(pos, pos),
-				targetUri: uri,
-				// Highlight the whole match our regex captured with the
-				// name of the class.
-				originSelectionRange: originRange,
-			}
-
-			return [locationLink]
 		}
 
-		// Hover over a class name.
-		range = doc.getWordRangeAtPosition(position, CLASS_REGEX)
-		if (range) {
-			let className = doc.getText(range)
-
-			// We store classes under their absolute name, so add "\" if it's
-			// missing.
-			if (className[0] !== '\\') {
-				className = `\\${className}`
-			}
-
-			// The requested symbol is a class name.
-			const classInfo = await this.extCore.phpWorkspaceInfoProvider.classMap.get(
-				className,
+		// Is there a variable name in front of the "->" string which may have
+		// been the trigger string?
+		const variableBeforeRange = doc.getWordRangeAtPosition(
+			position.translate(0, -3),
+			VARIABLE_REGEX,
+		)
+		const variableBefore =
+			(variableBeforeRange && doc.getText(variableBeforeRange)) || false
+		if (triggerString.endsWith('->') && variableBefore) {
+			const subjectVar = await this.extCore.latteFileInfoProvider.getVariableInfo(
+				doc,
+				variableBefore,
+				position,
 			)
 
-			if (!classInfo) {
+			if (!subjectVar || !subjectVar.type) {
 				return null
 			}
 
-			const uri = classInfo?.location?.uri
-			const offset = classInfo?.location.offset
-			if (!offset || !uri) {
+			let subjectType = subjectVar.type.repr
+			// We store classes under their absolute name, so add "\" if it's missing.
+			if (subjectType[0] !== '\\') {
+				subjectType = `\\${subjectType}`
+			}
+
+			const subjectClass =
+				this.extCore.phpWorkspaceInfoProvider.classMap.get(subjectType)
+
+			if (!subjectClass || !subjectClass.location || !subjectClass.methods) {
 				return null
 			}
 
-			const pos = await getPositionAtOffset(offset, uri)
-			const locationLink: vscode.LocationLink = {
-				targetRange: new vscode.Range(pos, pos),
-				targetUri: uri,
-				// Highlight the whole match our regex captured with the
-				// name of the class.
-				originSelectionRange: range,
-			}
+			// Create a list of completion items from methods in the class of
+			// the type of the variable.
+			return Array.from(
+				mapMap(subjectClass.methods, (k, v) => {
+					const item = new vscode.CompletionItem(
+						k,
+						vscode.CompletionItemKind.Method,
+					)
 
-			return [locationLink]
+					item.detail = v.name
+					// Place the name of the method + parentheses and place the
+					// cursor inside those parentheses (snippets support this).
+					item.insertText = new vscode.SnippetString(`${k}(\${1:})`)
+					return item
+				}).values(),
+			)
 		}
 
 		return null

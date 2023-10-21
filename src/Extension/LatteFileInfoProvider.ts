@@ -6,7 +6,7 @@ import VarTag from './DumbLatteParser/Tags/VarTag'
 import VarTypeTag from './DumbLatteParser/Tags/VarTypeTag'
 import RuntimeCache from './utils/RuntimeCache'
 import { PhpType } from './TypeParser/typeParser'
-import { isInstanceOf, narrowType } from './utils/utils'
+import { filterMap, isInstanceOf, narrowType } from './utils/utils'
 import { debugMessage, getPositionAtOffset } from './utils/utils.vscode'
 import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
 
@@ -119,6 +119,33 @@ export class LatteFileInfoProvider {
 		return docInfo
 	}
 
+	public async getVariablesAtPosition(
+		doc: TextDocument,
+		position: vscode.Position | null,
+	): Promise<VariableDefinitions> {
+		let docInfo = this.cache.get(doc)
+		if (!docInfo) {
+			docInfo = await this.rescanFile(doc)
+		}
+
+		let vars = docInfo.variables
+		if (!position) {
+			return vars
+		}
+
+		// Go through all definitions of known variables (there may be multiple
+		// definitions of a specific variable throughout the document) in this
+		// document and return only definitions of those that are known
+		// (defined) before the specified position.
+		return filterMap(vars, (varName: string, varInfos: VariableInfo[]): boolean => {
+			return varInfos.some((varInfo: VariableInfo) => {
+				return varInfo.definedAt
+					? position.isAfterOrEqual(varInfo.definedAt)
+					: false
+			})
+		})
+	}
+
 	public async getVariableInfo(
 		doc: TextDocument,
 		varName: string,
@@ -149,9 +176,9 @@ export class LatteFileInfoProvider {
 
 		// ...and find the latest one for specified position.
 		const foundDefinition: VariableInfo | undefined = defs.findLast(
-			(varDef: VariableInfo): boolean => {
-				return varDef.definedAt
-					? position.isAfterOrEqual(varDef.definedAt)
+			(varInfo: VariableInfo): boolean => {
+				return varInfo.definedAt
+					? position.isAfterOrEqual(varInfo.definedAt)
 					: false
 			},
 		)
