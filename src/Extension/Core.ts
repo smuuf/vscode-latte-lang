@@ -102,6 +102,9 @@ class ExtensionHoverProvider implements vscode.HoverProvider {
 		const md = new vscode.MarkdownString()
 		const tmpVarType = varInfo.type ? varInfo.type.repr : 'mixed'
 
+		const hasDefinitionUri =
+			this.extCore.phpWorkspaceInfoProvider.classMap.get(tmpVarType)
+
 		md.appendMarkdown(`_variable_ \`${tmpVarType} ${varInfo.name}\``)
 
 		return new vscode.Hover(md)
@@ -195,11 +198,6 @@ class ExtensionCompletionItemProvider implements vscode.CompletionItemProvider {
 			}
 
 			let subjectType = subjectVar.type.repr
-			// We store classes under their absolute name, so add "\" if it's missing.
-			if (subjectType[0] !== '\\') {
-				subjectType = `\\${subjectType}`
-			}
-
 			const subjectClass =
 				this.extCore.phpWorkspaceInfoProvider.classMap.get(subjectType)
 

@@ -71,6 +71,15 @@ test('Test parser', () => {
 			'$sedmy',
 			'$osmy',
 		),
+		new VarTypeTag(
+			'$devaty',
+			{
+				startOffset: 278,
+				endOffset: 314,
+			},
+			parsePhpType('MyNamespace\\MyClass'),
+			307,
+		),
 	]
 
 	expect(result).toMatchObject(expected)

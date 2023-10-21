@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import { ParsingContext, PhpClassInfo, PhpClassMethods, PhpMethodInfo } from './types'
 import { captureBalanced } from './utils'
+import { maybeRemoveLeadingBackslash } from '../phpTypeParser/phpTypeParser'
 
 const NS_SEP = '\\'
 const NS_REGEX = /namespace\s+([^;]+);/
@@ -21,15 +22,10 @@ const FUNCTION_REGEX = /function\s+([^\s]+)\s*\(/
 export function detectNamespace(source: string): string {
 	const match = source.match(new RegExp(NS_REGEX.source))
 	if (!match) {
-		return NS_SEP
+		return ''
 	}
 
-	const ns = match[1]
-	if (ns[1] !== NS_SEP) {
-		return `${NS_SEP}${ns}` // Add '\' if the leading slash is missing.
-	}
-
-	return ns
+	return match[1]
 }
 
 function extractMethods(
@@ -78,7 +74,7 @@ export function extractClasses(
 		const name: string = match[1]
 
 		const classDef = {
-			fqn: `${parsingContext.namespace}\\${name}`,
+			fqn: maybeRemoveLeadingBackslash(`${parsingContext.namespace}\\${name}`),
 			name: name,
 			namespace: parsingContext.namespace,
 			methods: extractMethods(

@@ -22,19 +22,40 @@ type SingleType = {
 	nullable: boolean
 }
 
+/**
+ * See https://www.php.net/manual/en/language.types.type-system.php
+ */
+const BUILTIN_TYPES = [
+	'null',
+	'false',
+	'true',
+	'bool',
+	'int',
+	'float',
+	'string',
+	'array',
+	'object',
+	'iterable',
+	'mixed',
+	'resource',
+	'never',
+	'void',
+]
+
 const BASIC_ITERABLES = [
 	'array',
 	'iterable',
-	'\\Iterator',
-	'\\IteratorAggregate',
-	'\\Traversable',
-	'\\Generator',
+	'Iterator',
+	'IteratorAggregate',
+	'Traversable',
+	'Generator',
 ]
 
 function determineIterationItem(typeName: string, template: any[]): IterationSpec {
 	// Support for:
 	// 1. (array|\ArrayAccess|\Iterator|\Traversable)<valueType>
 	// 2. (array|\ArrayAccess|\Iterator|\Traversable)<keyType, valueType>
+	typeName = maybeRemoveLeadingBackslash(typeName)
 	if (template && BASIC_ITERABLES.includes(typeName)) {
 		if (template.length === 2) {
 			return {
@@ -51,6 +72,17 @@ function determineIterationItem(typeName: string, template: any[]): IterationSpe
 	return null
 }
 
+export function maybeRemoveLeadingBackslash(name: string): string {
+	// We refer to classes in other places by their absolute name, so add "\" if
+	// it's missing./ But maybe the name of the type is not a class, but a
+	// builtin PHP type, in which case don't do it.
+	if (name[0] == '\\') {
+		return name.substring(1)
+	}
+
+	return name
+}
+
 /**
  * Returns a string representatino For a given, possibly nested, AST
  * representing a PHP type.
@@ -65,10 +97,10 @@ function stringifyType(typeAst: any): string {
 	const template = typeAst.template as Array<any>
 	if (template) {
 		const list = template.map((item: any) => stringifyType(item))
-		return `${typeAst.type}<${list.join(', ')}>`
+		return `${maybeRemoveLeadingBackslash(typeAst.type)}<${list.join(', ')}>`
 	}
 
-	return typeAst.type
+	return maybeRemoveLeadingBackslash(typeAst.type)
 }
 
 /**
@@ -88,7 +120,7 @@ function processTypeAst(typeAst: any): PhpType {
 	if (typeAst.list) {
 		typeAst.template = [
 			{
-				type: typeAst.type,
+				type: maybeRemoveLeadingBackslash(typeAst.type),
 				template: null,
 				list: false,
 				union: null,
@@ -99,7 +131,7 @@ function processTypeAst(typeAst: any): PhpType {
 	}
 
 	return {
-		name: typeAst.type,
+		name: maybeRemoveLeadingBackslash(typeAst.type),
 		repr: stringifyType(typeAst),
 		iteratesAs: determineIterationItem(typeAst.type, typeAst.template || null),
 		nullable: typeAst.nullable || false,

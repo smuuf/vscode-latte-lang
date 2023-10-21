@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { CLASS_NAME_REGEX, METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
 import { ExtensionCore } from './Core'
 import { getPositionAtOffset } from './utils/utils.vscode'
+import { maybeRemoveLeadingBackslash } from './phpTypeParser/phpTypeParser'
 
 interface DefinitionProvider {
 	resolve: (
@@ -133,10 +134,6 @@ class MethodCallDefinitionProvider {
 		}
 
 		let className = subjectVarInfo.type.repr
-		// We store classes under their absolute name, so add "\" if it's missing.
-		if (className[0] !== '\\') {
-			className = `\\${className}`
-		}
 
 		// The requested symbol is a class name.
 		const classInfo = await this.extCore.phpWorkspaceInfoProvider.classMap.get(
@@ -197,12 +194,9 @@ class ClassDefinitionProvider {
 			return null
 		}
 
-		let className = doc.getText(range)
-		// We store classes under their absolute name, so add "\" if it's
-		// missing.
-		if (className[0] !== '\\') {
-			className = `\\${className}`
-		}
+		// We store classes under their absolute name, so if we want to find
+		// the text as a class name, we must add it first.
+		let className = maybeRemoveLeadingBackslash(doc.getText(range))
 
 		// The requested symbol is a class name.
 		const classInfo = await this.extCore.phpWorkspaceInfoProvider.classMap.get(

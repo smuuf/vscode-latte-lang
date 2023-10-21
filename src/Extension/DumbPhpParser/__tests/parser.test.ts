@@ -6,10 +6,10 @@ test('Detect namespace', () => {
 	let result: string | null
 
 	result = detectNamespace(str)
-	expect(result?.trim()).toBe('\\App\\Model\\Services')
+	expect(result?.trim()).toBe('App\\Model\\Services')
 
 	result = detectNamespace('nothing')
-	expect(result?.trim()).toBe('\\')
+	expect(result?.trim()).toBe('')
 })
 
 test('Detect classes', () => {
@@ -17,14 +17,14 @@ test('Detect classes', () => {
 	let result: any
 
 	result = extractClasses(str, {
-		namespace: '\\MyNamespace',
+		namespace: 'MyNamespace',
 		uri: null,
 	})
 
 	const expected = [
 		{
-			fqn: '\\MyNamespace\\SomeClass',
-			namespace: '\\MyNamespace',
+			fqn: 'MyNamespace\\SomeClass',
+			namespace: 'MyNamespace',
 			name: 'SomeClass',
 			location: {
 				uri: null,

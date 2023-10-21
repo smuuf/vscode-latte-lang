@@ -174,6 +174,17 @@ test('Simple template scan', () => {
 			},
 			regionType: RegionType.LATTE_TAG,
 		}),
+		new DumbTag({
+			name: 'varType',
+			args: 'MyNamespace\\MyClass $devaty',
+			nameOffset: 279,
+			argsOffset: 287,
+			tagRange: {
+				startOffset: 278,
+				endOffset: 314,
+			},
+			regionType: RegionType.LATTE_TAG,
+		}),
 	]
 
 	expect(result).toMatchObject(expected)
