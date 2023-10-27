@@ -10,11 +10,6 @@ export default class DumbTag {
 	readonly regionType: RegionType
 	readonly closing: boolean = false
 
-	// constructor(
-	// 	content: string,
-	// 	range: Range,
-	// 	regionType: RegionType,
-	// ) {
 	constructor({
 		name,
 		nameOffset,

@@ -2,7 +2,7 @@ import DumbTag from './DumbTag'
 import { DumbTagConstructorArgs, RegionType, ScannerState } from './types'
 import Stack from '../../utils/Stack'
 import { isRegionTransferAllowed, isRegionTransferIgnored } from './RegionPolicies'
-import { isString } from '../../utils/utils'
+import { isString } from '../../utils/common'
 
 const WORD_REGEX = /[a-zA-Z_][a-zA-Z0-9_-]*/
 const QUOTED_STRING_REGEX = /(")(?<s1>(?:\\"|[^"])+)\1|(')(?<s2>(?:\\'|[^'])+)\1/

@@ -2,7 +2,7 @@ import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { isValidTypeSpec } from '../regexes'
 import { isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
-import { Range, AbstractTag } from '../types'
+import { Range, AbstractTag, ParsingContext } from '../types'
 
 export default class VarTag extends AbstractTag {
 	public static readonly DUMB_NAME = 'var'
@@ -16,7 +16,7 @@ export default class VarTag extends AbstractTag {
 		super()
 	}
 
-	static fromDumbTag(dumbTag: DumbTag): VarTag | null {
+	static fromDumbTag(dumbTag: DumbTag, parsingContext: ParsingContext): VarTag | null {
 		const argsParts = dumbTag.args.split(/\s+/, 10) // Generous limit.
 		const nameOffset = dumbTag.args.indexOf('$')
 

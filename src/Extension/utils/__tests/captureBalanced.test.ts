@@ -1,6 +1,6 @@
 import { readTestDataFile } from '../../../tests/testUtils'
+import { captureBalanced } from '../captureBalanced'
 import { BalancedCaptureResult } from '../types'
-import { captureBalanced } from '../utils'
 
 const EXPECTED_1 = `use SmartObject;
 
@@ -22,7 +22,7 @@ const EXPECTED_1 = `use SmartObject;
 
 const EXPECTED_2 = `private EntityFileSystemService $entityFileSystemService,`
 
-test('captureBalanced', () => {
+test('captureBalanced: PHP class contents', () => {
 	const str = readTestDataFile(`SomeClass.php`)
 	let result: BalancedCaptureResult | null
 
@@ -41,4 +41,19 @@ test('captureBalanced', () => {
 	result = captureBalanced(['{', '}'], str, 256)
 	expect(result?.content.trim()).toBe('')
 	expect(result?.offset).toBe(330)
+})
+
+test('captureBalanced: Basics', () => {
+	let str: string
+	let result: BalancedCaptureResult | null
+
+	str = 'aaa{abc}ccc'
+	result = captureBalanced(['{', '}'], str, 0)
+	expect(result?.content).toBe('abc')
+	expect(result?.offset).toBe(4)
+
+	str = "aaa'abc'ccc"
+	result = captureBalanced(["'", "'"], str, 0)
+	expect(result?.content).toBe('abc')
+	expect(result?.offset).toBe(4)
 })

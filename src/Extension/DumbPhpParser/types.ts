@@ -13,16 +13,10 @@ export type PhpClassInfo = {
 
 	fqn: string
 	location: {
-		uri: vscode.Uri | null
+		uri: vscode.Uri
 		offset: integer
-	}
+	} | null
 	methods: PhpClassMethods | null
-}
-
-// Export for testing.
-export type BalancedCaptureResult = {
-	content: string
-	offset: integer // Start index of the content inside the original input string.
 }
 
 export type ParsingContext = {

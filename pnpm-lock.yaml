@@ -12,7 +12,7 @@ devDependencies:
     specifier: ^20.6.2
     version: 20.8.7
   '@types/vscode':
-    specifier: ^1.82.0
+    specifier: ^1.83.1
     version: 1.83.1
   '@vscode/vsce':
     specifier: ^2.21.1
