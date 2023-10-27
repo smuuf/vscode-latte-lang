@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { CLASS_NAME_REGEX, METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
-import { ExtensionCore } from './Core'
-import { getPositionAtOffset } from './utils/utils.vscode'
+import { ExtensionCore } from './ExtensionCore'
+import { getPositionAtOffset } from './utils/common.vscode'
 import { maybeRemoveLeadingBackslash } from './phpTypeParser/phpTypeParser'
 
 interface DefinitionProvider {
@@ -18,13 +18,13 @@ type DefinitionProviderReturnValue = Promise<
 export class DefinitionProviderAggregator {
 	providers: Map<string, DefinitionProvider>
 
-	public constructor(extCode: ExtensionCore) {
+	public constructor(extCore: ExtensionCore) {
 		this.providers = new Map<string, DefinitionProvider>()
 
 		// Order is important!
-		this.addProvider('variable', new VariableNameDefinitionProvider(extCode))
-		this.addProvider('methodCall', new MethodCallDefinitionProvider(extCode))
-		this.addProvider('class', new ClassDefinitionProvider(extCode))
+		this.addProvider('variable', new VariableNameDefinitionProvider(extCore))
+		this.addProvider('methodCall', new MethodCallDefinitionProvider(extCore))
+		this.addProvider('class', new ClassDefinitionProvider(extCore))
 	}
 
 	public addProvider(name: string, provider: DefinitionProvider): void {
@@ -136,7 +136,7 @@ class MethodCallDefinitionProvider {
 		let className = subjectVarInfo.type.repr
 
 		// The requested symbol is a class name.
-		const classInfo = await this.extCore.phpWorkspaceInfoProvider.classMap.get(
+		const classInfo = await this.extCore.phpWorkspaceInfoProvider.getClassInfo(
 			className,
 		)
 		if (!classInfo) {
@@ -199,15 +199,15 @@ class ClassDefinitionProvider {
 		let className = maybeRemoveLeadingBackslash(doc.getText(range))
 
 		// The requested symbol is a class name.
-		const classInfo = await this.extCore.phpWorkspaceInfoProvider.classMap.get(
+		const classInfo = await this.extCore.phpWorkspaceInfoProvider.getClassInfo(
 			className,
 		)
 		if (!classInfo) {
 			return null
 		}
 
-		const uri = classInfo?.location?.uri
-		const offset = classInfo?.location.offset
+		const uri = classInfo.location?.uri
+		const offset = classInfo.location?.offset
 		if (!offset || !uri) {
 			return null
 		}

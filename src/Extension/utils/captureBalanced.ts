@@ -12,7 +12,8 @@ import { BalancedCaptureResult } from './types'
 export function captureBalanced(
 	delimiter: [string, string],
 	input: string,
-	startOffset: number,
+	startOffset: number = 0,
+	forceStartOffset: boolean = false,
 ): BalancedCaptureResult | null {
 	let offset = startOffset
 	let maxOffset = input.length - 1
@@ -20,9 +21,10 @@ export function captureBalanced(
 	// We're going to ignore right delimiters until we've found the left one
 	// first.
 	let foundLeftDel: boolean = false
-	let insideStartOffset: number | null = null
+	let leftDelOffset: number | null = null
 	const leftDel: string = delimiter[0]
 	const rightDel: string = delimiter[1]
+	const delsAreSame = leftDel === rightDel
 
 	if (leftDel.length !== 1 || rightDel.length !== 1) {
 		throw new Error('Both delimiters must be single-charater strings')
@@ -31,13 +33,21 @@ export function captureBalanced(
 	let counter = 0
 
 	while (offset <= maxOffset) {
+		if (forceStartOffset && offset !== startOffset && !foundLeftDel) {
+			return null
+		}
+
 		const char = input[offset]
 
-		if (char === leftDel) {
-			if (!foundLeftDel) {
-				insideStartOffset = offset + 1
-			}
+		if (!foundLeftDel && char === leftDel) {
+			leftDelOffset = offset
 			foundLeftDel = true
+			offset++
+			counter++
+			continue
+		}
+
+		if (char === leftDel && !delsAreSame) {
 			counter++
 		}
 
@@ -45,8 +55,8 @@ export function captureBalanced(
 			counter--
 			if (counter === 0) {
 				return {
-					content: input.substring(insideStartOffset!, offset),
-					offset: insideStartOffset!,
+					content: input.substring(leftDelOffset! + 1, offset),
+					offset: leftDelOffset! + 1,
 				} as BalancedCaptureResult
 			}
 		}

@@ -42,3 +42,20 @@ export function mapMap<K, V, RV>(map: Map<K, V>, fn: (k: K, v: V) => RV): Map<K,
 export function wrapString(str: string, beforeAfter: [string, string]): string {
 	return `${beforeAfter[0]}${str}${beforeAfter[1]}`
 }
+
+export function matchRegexAtPosition(
+	regex: string | RegExp,
+	subject: string,
+	position: integer,
+): RegExpExecArray | null {
+	// If we got a Regexp object, make our own copy, so the original's object
+	// lastIndex is not potentially mutated by us.
+	if (!isString(regex)) {
+		narrowType<RegExp>(regex)
+		regex = regex.source
+	}
+
+	regex = new RegExp(regex, 'y') // "y" flag makes the regex match precisely at lastIndex.
+	regex.lastIndex = position
+	return regex.exec(subject)
+}

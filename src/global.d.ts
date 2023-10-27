@@ -1,6 +1,10 @@
-export {}
+import * as vscode from 'vscode'
 
 declare global {
+	type VoidPromise = Promise<void> // To avoid Promise<Void> everywhere.
+	type TextDoc = vscode.TextDocument // To avoid these everywhere.
+
 	type integer = number // Semantics, people.
-	type VoidPromise = Promise<void>
+	type filePath = string
+	type phpClassFqn = string // PHP class fully qualified name.
 }

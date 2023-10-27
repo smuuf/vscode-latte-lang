@@ -5,8 +5,9 @@ import { LatteFileInfoProvider } from './LatteFileInfoProvider'
 import { PhpWorkspaceInfoProvider } from './PhpWorkspaceInfoProvider'
 import { DefinitionProviderAggregator } from './DefinitionProviders'
 import { VARIABLE_REGEX } from './regexes'
-import { mapMap } from './utils/utils'
-import { buildCommandUri, infoMessage } from './utils/utils.vscode'
+import { mapMap } from './utils/common'
+import { buildCommandUri } from './utils/common.vscode'
+import { WorkspaceEvents } from './WorkspaceEvents'
 
 const LANG_ID = 'latte'
 
@@ -15,32 +16,23 @@ export class ExtensionCore {
 	latteFileInfoProvider: LatteFileInfoProvider
 	phpWorkspaceInfoProvider: PhpWorkspaceInfoProvider
 	definitionProvider: DefinitionProviderAggregator
+	workspaceEvents: WorkspaceEvents
 
 	public constructor(ctx: vscode.ExtensionContext) {
 		this.ctx = ctx
-		this.latteFileInfoProvider = new LatteFileInfoProvider()
-		this.phpWorkspaceInfoProvider = new PhpWorkspaceInfoProvider()
+		this.workspaceEvents = new WorkspaceEvents()
+
+		this.latteFileInfoProvider = new LatteFileInfoProvider(this)
+		this.phpWorkspaceInfoProvider = new PhpWorkspaceInfoProvider(this)
 		this.definitionProvider = new DefinitionProviderAggregator(this)
 	}
 
 	public registerDisposables(): void {
-		const disposables = [
+		const providers = [
 			vscode.languages.registerHoverProvider(
 				LANG_ID,
 				new ExtensionHoverProvider(this),
 			),
-			vscode.workspace.onDidChangeTextDocument((event) => {
-				if (event.document.languageId !== LANG_ID) {
-					return
-				}
-				this.latteFileInfoProvider.forgetFileInfo(event.document)
-			}),
-			vscode.workspace.onDidCloseTextDocument((doc) => {
-				if (doc.languageId !== LANG_ID) {
-					return
-				}
-				this.latteFileInfoProvider.forgetFileInfo(doc)
-			}),
 			vscode.languages.registerDefinitionProvider(
 				LANG_ID,
 				new ExtensionGoToDefinitionProvider(this),
@@ -48,14 +40,26 @@ export class ExtensionCore {
 			vscode.languages.registerCompletionItemProvider(
 				LANG_ID,
 				new ExtensionCompletionItemProvider(this),
-				'$',
-				'>',
+				'$', // For variable name autocompletion.
+				'>', // For $object->methodName() completion.
 			),
+		]
+
+		const documentEvents = [
+			vscode.workspace.onDidChangeTextDocument(async (event) => {
+				await this.workspaceEvents.fireDocumentChange(event.document)
+			}),
+			vscode.workspace.onDidCloseTextDocument(async (doc) => {
+				await this.workspaceEvents.fireDocumentClose(doc)
+			}),
+			vscode.workspace.onDidSaveTextDocument(async (doc) => {
+				await this.workspaceEvents.fireDocumentSave(doc)
+			}),
 		]
 
 		// By adding disposables to subscriptions we tell vscode to dispose them
 		// on deactivation.
-		this.ctx.subscriptions.push(...disposables)
+		this.ctx.subscriptions.push(...providers, ...documentEvents)
 	}
 }
 
@@ -102,8 +106,8 @@ class ExtensionHoverProvider implements vscode.HoverProvider {
 		const md = new vscode.MarkdownString()
 		let varStr = varInfo.type ? varInfo.type.repr : 'mixed'
 
-		const classInfo = this.extCore.phpWorkspaceInfoProvider.classMap.get(varStr)
-		if (classInfo && classInfo.location.uri) {
+		const classInfo = await this.extCore.phpWorkspaceInfoProvider.getClassInfo(varStr)
+		if (classInfo && classInfo.location?.uri) {
 			const commandUriStr = buildCommandUri('vscode.open', [classInfo.location.uri])
 			varStr = `[\`${varStr}\`](${commandUriStr})`
 			md.isTrusted = true
@@ -203,8 +207,9 @@ class ExtensionCompletionItemProvider implements vscode.CompletionItemProvider {
 			}
 
 			let subjectType = subjectVar.type.repr
-			const subjectClass =
-				this.extCore.phpWorkspaceInfoProvider.classMap.get(subjectType)
+			const subjectClass = await this.extCore.phpWorkspaceInfoProvider.getClassInfo(
+				subjectType,
+			)
 
 			if (!subjectClass || !subjectClass.location || !subjectClass.methods) {
 				return null

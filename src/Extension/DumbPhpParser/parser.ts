@@ -1,9 +1,8 @@
 import * as vscode from 'vscode'
 import { ParsingContext, PhpClassInfo, PhpClassMethods, PhpMethodInfo } from './types'
-import { captureBalanced } from './utils'
 import { maybeRemoveLeadingBackslash } from '../phpTypeParser/phpTypeParser'
+import { captureBalanced } from '../utils/captureBalanced'
 
-const NS_SEP = '\\'
 const NS_REGEX = /namespace\s+([^;]+);/
 
 const CLASS_REGEX = /class\s+([^\s]+)\s*/

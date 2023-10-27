@@ -1,6 +1,6 @@
 import { isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
-import { Range, AbstractTag } from '../types'
+import { Range, AbstractTag, ParsingContext } from '../types'
 
 export default class ForeachTag extends AbstractTag {
 	public static readonly DUMB_NAME = 'foreach'
@@ -13,7 +13,10 @@ export default class ForeachTag extends AbstractTag {
 		super()
 	}
 
-	static fromDumbTag(dumbTag: DumbTag): ForeachTag | null {
+	static fromDumbTag(
+		dumbTag: DumbTag,
+		parsingContext: ParsingContext,
+	): ForeachTag | null {
 		const argsParts = dumbTag.args.match(/([^\s]+)+\s*as\s*([^\s]+)+/)
 		if (!argsParts) {
 			return null
