@@ -1,12 +1,53 @@
 import * as vscode from 'vscode'
-import { ParsingContext, PhpClassInfo, PhpClassMethods, PhpMethodInfo } from './types'
-import { maybeRemoveLeadingBackslash } from '../phpTypeParser/phpTypeParser'
+import {
+	ParsingContext,
+	PhpClassInfo,
+	PhpClassMethods,
+	PhpMethodFlags,
+	PhpMethodInfo,
+	SymbolVisibility,
+} from './types'
+import { parsePhpTypeRaw, resolveMaybeImportedName } from '../phpTypeParser/phpTypeParser'
 import { captureBalanced } from '../utils/captureBalanced'
+import { dump, matchRegexFromIndex } from '../utils/common'
 
 const NS_REGEX = /namespace\s+([^;]+);/
 
-const CLASS_REGEX = /class\s+([^\s]+)\s*/
-const FUNCTION_REGEX = /function\s+([^\s]+)\s*\(/
+const USE_IMPORT_REGEX = /^use\s+(?<import>[^\s]+);/m
+const CLASS_REGEX = /class\s+(?<name>[^\s]+)(\s+extends\s+(?<parent>[^\s]+)?)?\s*/
+const FUNCTION_REGEX = /(?<flags>(?:[a-z]+\s+)*)function\s+(?<name>[^\s]+)\s*\(/
+
+// This regex takes the possibility of return type being unspecified in account,
+// this way it will stop where we want and will not try to find matches for
+// another sections of the string containing source code of PHP class.
+const RETURN_TYPE_REGEX = /\)\s*(:\s*(?<returnType>[^\s]+)\s*)?\{/
+
+/**
+ * Prepare a mapping of fully-qualified class names to their base name.
+ * This makes resolving possibly imported names easier.
+ *
+ * E.g. {"World": "\Hello\World", ...}
+ */
+function prepareImportMapping(imports: string[]): Map<string, string> {
+	return new Map(imports.map((n) => [n.substring(n.lastIndexOf('\\') + 1), n]))
+}
+
+function extractMethodFlags(flagsStr: string): PhpMethodFlags {
+	flagsStr = flagsStr.trim()
+	const flags = new Set(flagsStr.split(/\s+/))
+	let visibility = SymbolVisibility.PUBLIC // Default is public, why not.
+
+	if (flags.has('private')) {
+		visibility = SymbolVisibility.PRIVATE
+	} else if (flags.has('protected')) {
+		visibility = SymbolVisibility.PROTECTED
+	}
+
+	return {
+		visibility: visibility,
+		static: flags.has('static'),
+	}
+}
 
 /**
  * Scans the PHP source string for namespace declaration and returns it as
@@ -17,8 +58,7 @@ const FUNCTION_REGEX = /function\s+([^\s]+)\s*\(/
  * 1. `<?php namespace MyNamespace; ...` returns `\MyNamespace`.
  * 1. `<?php $a = 1; ...` returns `\`, because no there's no namespace.
  */
-// Export for testing.
-export function detectNamespace(source: string): string {
+function detectNamespace(source: string): string {
 	const match = source.match(new RegExp(NS_REGEX.source))
 	if (!match) {
 		return ''
@@ -27,25 +67,50 @@ export function detectNamespace(source: string): string {
 	return match[1]
 }
 
+/**
+ * Scans the PHP source string for `use ...;` imports.
+ */
+function detectImports(source: string): string[] {
+	const imports = []
+	const importRegex = new RegExp(USE_IMPORT_REGEX.source, 'gm')
+	const matches = source.matchAll(importRegex)
+
+	for (const match of matches) {
+		imports.push(match.groups!['import'])
+	}
+
+	return imports
+}
+
 function extractMethods(
 	source: string | null,
 	startOffset: number,
 	parsingContext: ParsingContext,
-): PhpClassMethods | null {
+): PhpClassMethods {
+	const methods: PhpClassMethods = new Map()
 	if (!source) {
-		return null
+		return methods
 	}
 
-	const methods: PhpClassMethods = new Map()
-	const methodRegex = new RegExp(FUNCTION_REGEX.source, 'g')
+	const methodRegex = new RegExp(FUNCTION_REGEX.source, 'gd')
 	const matches = source.matchAll(methodRegex)
 
 	for (const match of matches) {
-		const where = match.index!
-		const methodName = match[1]
+		const where = match.indices![2][0]
+		const methodName = match.groups!['name']
+		const flags = match.groups!['flags'] ?? '' // "private", "protected", "static", etc.
+
+		let returnType = 'mixed' // Default return type.
+		const returnTypeMatch = matchRegexFromIndex(RETURN_TYPE_REGEX, source, where)
+		if (returnTypeMatch) {
+			returnType = returnTypeMatch.groups!['returnType'] ?? returnType
+		}
+
 		const methodDef = {
 			name: methodName,
-			offset: startOffset + where + 9, // Add the length of string "function ".
+			offset: startOffset + where, // Add the length of string "function ".,
+			flags: extractMethodFlags(flags),
+			returnType: parsePhpTypeRaw(returnType, parsingContext),
 		} as PhpMethodInfo
 
 		methods.set(methodName, methodDef)
@@ -54,8 +119,7 @@ function extractMethods(
 	return methods
 }
 
-// Export for testing.
-export function extractClasses(
+function extractClasses(
 	source: string | null,
 	parsingContext: ParsingContext,
 ): PhpClassInfo[] {
@@ -64,17 +128,23 @@ export function extractClasses(
 	}
 
 	const classes: PhpClassInfo[] = []
-	const classRegex = new RegExp(CLASS_REGEX.source, 'g')
+	const classRegex = new RegExp(CLASS_REGEX.source, 'gd')
 	const matches = source.matchAll(classRegex)
 
 	for (const match of matches) {
-		const where = match.index! + 6 // Add length of string "class ".
+		const where = match.indices![1][0]
 		const classBody = captureBalanced(['{', '}'], source, where)
-		const name: string = match[1]
+		const name: string = match.groups!['name']
+		let parentFqn: string = match.groups!['parent'] ?? null
+
+		if (parentFqn) {
+			parentFqn = resolveMaybeImportedName(parentFqn, parsingContext)
+		}
 
 		const classDef = {
-			fqn: maybeRemoveLeadingBackslash(`${parsingContext.namespace}\\${name}`),
+			fqn: resolveMaybeImportedName(name, parsingContext),
 			name: name,
+			parentFqn: parentFqn,
 			namespace: parsingContext.namespace,
 			methods: extractMethods(
 				classBody?.content || null,
@@ -102,10 +172,12 @@ export async function parsePhp(
 	uri: vscode.Uri | null = null,
 ): Promise<PhpClassInfo[]> {
 	const ns = detectNamespace(source)
+	const imports = detectImports(source)
 
-	const parsingContext = {
+	const parsingContext: ParsingContext = {
 		namespace: ns,
 		uri: uri,
+		imports: prepareImportMapping(imports),
 	}
 
 	return extractClasses(source, parsingContext)

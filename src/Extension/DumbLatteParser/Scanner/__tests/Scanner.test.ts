@@ -1,4 +1,4 @@
-import { readTestDataFile } from '../../../../tests/testUtils'
+import { readTestDataFile } from '../../../../../tests/testUtils'
 import DumbTag from '../DumbTag'
 import { Scanner } from '../Scanner'
 import { RegionType } from '../types'

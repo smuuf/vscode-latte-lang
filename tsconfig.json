@@ -12,7 +12,7 @@
 
     /* Language and Environment */
     "target": "ES2022",                                  /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
-    "lib": ["ES2023.Array"],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
+    "lib": ["es2023.Array", "es2022.regexp"],                                        /* Specify a set of bundled library declaration files that describe the target runtime environment. */
     // "jsx": "preserve",                                /* Specify what JSX code is generated. */
     // "experimentalDecorators": true,                   /* Enable experimental support for legacy experimental decorators. */
     // "emitDecoratorMetadata": true,                    /* Emit design-type metadata for decorated declarations in source files. */
@@ -106,11 +106,11 @@
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true ,                                /* Skip type checking all .d.ts files. */
   },
-  "include": ["./src/**/*", "./src/global.d.ts"],
+  "include": ["./src/**/*", "./src/global.d.ts", "tests"],
   "exclude": [
     "./lsp/*",
     "./node_modules/*",
-    "./src/tests/*",
+    "tests/*",
     "./**/*.test.{ts,js}",
     "./**/__tests/*"
   ]

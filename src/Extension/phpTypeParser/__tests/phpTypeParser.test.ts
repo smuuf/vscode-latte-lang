@@ -1,5 +1,4 @@
-import { maybeRemoveLeadingBackslash, parsePhpType } from '../phpTypeParser'
-import { dump } from '../../utils/utils'
+import { normalizeTypeName, parsePhpType } from '../phpTypeParser'
 
 test('Test parsing of PHP-like type hints: Basics', () => {
 	expect(parsePhpType('ahoj')).toEqual({
@@ -150,8 +149,8 @@ const WELL_KNOWN_ITERABLES = [
 for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 	test(`Test parsing of PHP-like type hints: Basic iterable: ${wellKnownIterable}<V>`, () => {
 		expect(parsePhpType(`${wellKnownIterable}<chuligane>`)).toEqual({
-			name: `${maybeRemoveLeadingBackslash(wellKnownIterable)}`,
-			repr: `${maybeRemoveLeadingBackslash(wellKnownIterable)}<chuligane>`,
+			name: `${normalizeTypeName(wellKnownIterable)}`,
+			repr: `${normalizeTypeName(wellKnownIterable)}<chuligane>`,
 			iteratesAs: {
 				value: {
 					name: 'chuligane',
@@ -168,8 +167,8 @@ for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 	test(`Test parsing of PHP-like type hints: Basic iterable: ${wellKnownIterable}<K, V>`, () => {
 		expect(parsePhpType(`${wellKnownIterable}<string, chuligane>`)).toEqual({
-			name: `${maybeRemoveLeadingBackslash(wellKnownIterable)}`,
-			repr: `${maybeRemoveLeadingBackslash(wellKnownIterable)}<string, chuligane>`,
+			name: `${normalizeTypeName(wellKnownIterable)}`,
+			repr: `${normalizeTypeName(wellKnownIterable)}<string, chuligane>`,
 			iteratesAs: {
 				key: {
 					name: 'string',

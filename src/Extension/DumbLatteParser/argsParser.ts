@@ -1,5 +1,5 @@
 import { captureBalanced } from '../utils/captureBalanced'
-import { matchRegexAtPosition } from '../utils/common'
+import { matchRegexAtIndex } from '../utils/common'
 
 export class ArgsParser {
 	private _offset: integer = 0
@@ -28,7 +28,7 @@ export class ArgsParser {
 	}
 
 	public peekRegex(regex: string | RegExp): RegExpMatchArray | null {
-		return matchRegexAtPosition(regex, this.input, this._offset)
+		return matchRegexAtIndex(regex, this.input, this._offset)
 	}
 
 	public consumeRegex(regex: string | RegExp): RegExpMatchArray | null {
@@ -121,7 +121,7 @@ export class ArgsParser {
 		}
 
 		// The word be also followed by a writespace.
-		if (!matchRegexAtPosition(/\s/, this.input, this._offset + str.length)) {
+		if (!matchRegexAtIndex(/\s/, this.input, this._offset + str.length)) {
 			return null
 		}
 

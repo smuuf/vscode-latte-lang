@@ -1,4 +1,4 @@
-import { readTestDataFile } from '../../../../tests/testUtils'
+import { readTestDataFile } from '../../../../../tests/testUtils'
 import { Scanner } from '../Scanner'
 
 test('Scanner: Bad Latte: Unclosed Latte tag', () => {
