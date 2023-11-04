@@ -2,6 +2,33 @@ import * as vscode from 'vscode'
 import config from '../../config'
 import { lruCache } from './lruCache'
 
+export { debugMessage, _getPositionAtOffset as getPositionAtOffset }
+
+export function statusBarMessage(msg: string, prefix: string = ''): vscode.Disposable {
+	msg = `${prefix ? prefix + ' ' : ''}[Latte] ${msg}`
+	return vscode.window.setStatusBarMessage(msg, 30_000)
+}
+
+export function statusBarSpinMessage(msg: string): vscode.Disposable {
+	return statusBarMessage(msg, '$(sync~spin)')
+}
+
+export function infoMessage(msg: string): void {
+	vscode.window.showInformationMessage(msg)
+}
+
+export function getDocUriString(doc: TextDoc): string {
+	return getUriString(doc.uri)
+}
+
+export function getUriString(uri: vscode.Uri): string {
+	return uri.toString()
+}
+
+export function buildCommandUri(command: string, args: object): string {
+	return `command:${command}?${encodeURIComponent(JSON.stringify(args))}`
+}
+
 const debugMessage = config.debugging
 	? (msg: string): vscode.Disposable => vscode.window.setStatusBarMessage(msg, 5_000)
 	: () => ({ dispose: () => {} }) // Fake disposable.
@@ -9,23 +36,19 @@ const debugMessage = config.debugging
 /**
  * Dumb but hopefully sufficient type guard for use at runtime.
  */
-function isTextDocument(arg: any): arg is vscode.TextDocument {
+function isTextDocument(arg: any): arg is TextDoc {
 	return (arg.uri || arg.fileName) && arg.languageId !== null
-}
-
-export function buildCommandUri(command: string, args: object): string {
-	return `command:${command}?${encodeURIComponent(JSON.stringify(args))}`
 }
 
 async function getPositionAtOffset(
 	offset: integer,
-	doc: vscode.TextDocument | vscode.Uri | string,
+	doc: TextDoc | vscode.Uri | string,
 ): Promise<vscode.Position> {
 	if (isTextDocument(doc)) {
 		return doc.positionAt(offset)
 	}
 
-	const openedDoc: vscode.TextDocument = await vscode.workspace
+	const openedDoc: TextDoc = await vscode.workspace
 		// Can also be a string (the function supports strings, too), but
 		// because of TypeScript we just cast it to Uri. Whatever.
 		.openTextDocument(doc as vscode.Uri)
@@ -34,17 +57,3 @@ async function getPositionAtOffset(
 }
 
 const _getPositionAtOffset = lruCache(getPositionAtOffset, 600)
-
-export { debugMessage, _getPositionAtOffset as getPositionAtOffset }
-
-export function statusBarMessage(
-	msg: string,
-	prefix: string = 'Latte',
-): vscode.Disposable {
-	msg = prefix ? `${prefix}: ${msg}` : msg
-	return vscode.window.setStatusBarMessage(msg, 20_000)
-}
-
-export function infoMessage(msg: string): void {
-	vscode.window.showInformationMessage(msg)
-}

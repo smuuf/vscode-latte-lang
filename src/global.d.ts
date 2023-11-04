@@ -7,4 +7,5 @@ declare global {
 	type integer = number // Semantics, people.
 	type filePath = string
 	type phpClassFqn = string // PHP class fully qualified name.
+	type variableName = string // PHP/Latte variable name.
 }

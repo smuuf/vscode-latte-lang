@@ -1,4 +1,4 @@
-import { readTestDataFile } from '../../../tests/testUtils'
+import { readTestDataFile } from '../../../../tests/testUtils'
 import { parsePhpType } from '../../phpTypeParser/phpTypeParser'
 import DefaultTag from '../Tags/DefaultTag'
 import ForeachTag from '../Tags/ForeachTag'

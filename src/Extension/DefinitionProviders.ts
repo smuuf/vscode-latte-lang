@@ -2,13 +2,10 @@ import * as vscode from 'vscode'
 import { CLASS_NAME_REGEX, METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
 import { ExtensionCore } from './ExtensionCore'
 import { getPositionAtOffset } from './utils/common.vscode'
-import { maybeRemoveLeadingBackslash } from './phpTypeParser/phpTypeParser'
+import { normalizeTypeName } from './phpTypeParser/phpTypeParser'
 
 interface DefinitionProvider {
-	resolve: (
-		doc: vscode.TextDocument,
-		position: vscode.Position,
-	) => DefinitionProviderReturnValue
+	resolve: (doc: TextDoc, position: vscode.Position) => DefinitionProviderReturnValue
 }
 
 type DefinitionProviderReturnValue = Promise<
@@ -32,7 +29,7 @@ export class DefinitionProviderAggregator {
 	}
 
 	public async resolve(
-		doc: vscode.TextDocument,
+		doc: TextDoc,
 		position: vscode.Position,
 		token: vscode.CancellationToken,
 	): Promise<DefinitionProviderReturnValue> {
@@ -65,7 +62,7 @@ class VariableNameDefinitionProvider {
 	}
 
 	public async resolve(
-		doc: vscode.TextDocument,
+		doc: TextDoc,
 		position: vscode.Position,
 	): DefinitionProviderReturnValue {
 		const range = doc.getWordRangeAtPosition(position, VARIABLE_REGEX)
@@ -104,7 +101,7 @@ class MethodCallDefinitionProvider {
 	}
 
 	public async resolve(
-		doc: vscode.TextDocument,
+		doc: TextDoc,
 		position: vscode.Position,
 	): DefinitionProviderReturnValue {
 		const range = doc.getWordRangeAtPosition(position, METHOD_CALL_REGEX)
@@ -118,8 +115,8 @@ class MethodCallDefinitionProvider {
 			return null
 		}
 
-		const subjectVarName = match[1] || ''
-		const methodName = match[2] || ''
+		const subjectVarName = match.groups!['subject'] || ''
+		const methodName = match.groups!['method'] || ''
 		if (!subjectVarName) {
 			return null
 		}
@@ -136,14 +133,12 @@ class MethodCallDefinitionProvider {
 		let className = subjectVarInfo.type.repr
 
 		// The requested symbol is a class name.
-		const classInfo = await this.extCore.phpWorkspaceInfoProvider.getClassInfo(
-			className,
-		)
+		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(className)
 		if (!classInfo) {
 			return null
 		}
 
-		const methodInfo = classInfo.methods?.get(methodName)
+		const methodInfo = classInfo.methods.get(methodName)
 		if (!methodInfo || !methodInfo.offset) {
 			return null
 		}
@@ -186,7 +181,7 @@ class ClassDefinitionProvider {
 	}
 
 	public async resolve(
-		doc: vscode.TextDocument,
+		doc: TextDoc,
 		position: vscode.Position,
 	): DefinitionProviderReturnValue {
 		const range = doc.getWordRangeAtPosition(position, CLASS_NAME_REGEX)
@@ -196,12 +191,10 @@ class ClassDefinitionProvider {
 
 		// We store classes under their absolute name, so if we want to find
 		// the text as a class name, we must add it first.
-		let className = maybeRemoveLeadingBackslash(doc.getText(range))
+		let className = normalizeTypeName(doc.getText(range))
 
 		// The requested symbol is a class name.
-		const classInfo = await this.extCore.phpWorkspaceInfoProvider.getClassInfo(
-			className,
-		)
+		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(className)
 		if (!classInfo) {
 			return null
 		}

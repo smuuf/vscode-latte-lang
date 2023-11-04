@@ -4,8 +4,8 @@
 export class DefaultMap<K, V> extends Map<K, V> {
 	private defaultBuilder: () => V
 
-	constructor(defaultBuilder: () => V) {
-		super()
+	constructor(defaultBuilder: () => V, ...args: any) {
+		super(...args)
 		this.defaultBuilder = defaultBuilder
 	}
 

@@ -1,19 +1,34 @@
-type DocEventHandler = (doc: TextDoc) => void
-type HandlersList = [DocEventHandler, string | null][]
+import * as vscode from 'vscode'
+import path from 'path'
+
+type DocEventHandler = (doc: TextDoc) => VoidPromise
+type DocEventHandlersList = [DocEventHandler, string | null][]
+
+type UriEventHandler = (uri: vscode.Uri) => VoidPromise
+type UriEventHandlersList = [UriEventHandler, string | null][]
 
 export class WorkspaceEvents {
-	private onDocumentChangeHandlers: HandlersList = []
-	private onDocumentSaveHandlers: HandlersList = []
-	private onDocumentCloseHandlers: HandlersList = []
+	private onDocumentChangeHandlers: DocEventHandlersList = []
+	private onDocumentSaveHandlers: DocEventHandlersList = []
+	private onDocumentCloseHandlers: DocEventHandlersList = []
+	private onUriCreateHandlers: UriEventHandlersList = []
+	private onUriChangeHandlers: UriEventHandlersList = []
+	private onUriDeleteHandlers: UriEventHandlersList = []
 
-	private async fireDocumentEvent(doc: TextDoc, handlers: HandlersList) {
-		await handlers.map(async ([handler, langId]) => {
-			if (langId && doc.languageId !== langId) {
-				return
-			}
+	//
+	// Vscode TextDocument events.
+	//
 
-			await handler(doc)
-		})
+	private async fireDocumentEvent(doc: TextDoc, handlers: DocEventHandlersList) {
+		await Promise.all(
+			handlers.map(async ([handler, langId]) => {
+				if (langId && doc.languageId !== langId) {
+					return
+				}
+
+				return handler(doc)
+			}),
+		)
 	}
 
 	public async fireDocumentChange(doc: TextDoc) {
@@ -47,5 +62,47 @@ export class WorkspaceEvents {
 		langId: string | null = null,
 	): void {
 		this.onDocumentCloseHandlers.push([h, langId])
+	}
+
+	//
+	// Filesystem (URI) events.
+	//
+
+	private async fireUriEvent(uri: vscode.Uri, handlers: UriEventHandlersList) {
+		const uriExt = path.parse(uri.fsPath).ext
+
+		await Promise.all(
+			handlers.map(([handler, ext]) => {
+				if (ext && uriExt !== ext) {
+					return
+				}
+
+				return handler(uri)
+			}),
+		)
+	}
+
+	public async fireUriCreate(uri: vscode.Uri) {
+		await this.fireUriEvent(uri, this.onUriCreateHandlers)
+	}
+
+	public async fireUriChange(uri: vscode.Uri) {
+		await this.fireUriEvent(uri, this.onUriChangeHandlers)
+	}
+
+	public async fireUriDelete(uri: vscode.Uri) {
+		await this.fireUriEvent(uri, this.onUriDeleteHandlers)
+	}
+
+	public addUriCreateHandler(h: UriEventHandler, ext: string | null = null): void {
+		this.onUriCreateHandlers.push([h, ext])
+	}
+
+	public addUriChangeHandler(h: UriEventHandler, ext: string | null = null): void {
+		this.onUriChangeHandlers.push([h, ext])
+	}
+
+	public addUriDeleteHandler(h: UriEventHandler, ext: string | null = null): void {
+		this.onUriDeleteHandlers.push([h, ext])
 	}
 }

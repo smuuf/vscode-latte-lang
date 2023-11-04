@@ -18,7 +18,7 @@ export type VariableInfo = {
 	definedAt: vscode.Position | null
 }
 
-type VariableDefinitions = Map<string, VariableInfo[]>
+type VariableDefinitions = Map<variableName, VariableInfo[]>
 
 export type LatteFileInfo = {
 	externalReferences: Set<string>
@@ -35,12 +35,12 @@ export class LatteFileInfoProvider {
 		const workspaceEvents = extCore.workspaceEvents
 		// Really "on change" and not "on save", because we want to provide
 		// information about various stuff in Latte file even before saving it.
-		workspaceEvents.addDocumentChangeHandler((doc: vscode.TextDocument) => {
-			this.forgetLatteFileInfo(doc)
+		workspaceEvents.addDocumentChangeHandler((doc: TextDoc) => {
+			return this.forgetLatteFileInfo(doc)
 		}, LANG_ID_LATTE)
 	}
 
-	public forgetLatteFileInfo(doc: TextDocument): void {
+	public async forgetLatteFileInfo(doc: TextDocument): VoidPromise {
 		this.cache.delete(doc)
 	}
 
@@ -68,18 +68,21 @@ export class LatteFileInfoProvider {
 		// definitions of a specific variable throughout the document) in this
 		// document and return only definitions of those that are known
 		// (defined) before the specified position.
-		return filterMap(vars, (varName: string, varInfos: VariableInfo[]): boolean => {
-			return varInfos.some((varInfo: VariableInfo) => {
-				return varInfo.definedAt
-					? position.isAfterOrEqual(varInfo.definedAt)
-					: false
-			})
-		})
+		return filterMap(
+			vars,
+			(varName: variableName, varInfos: VariableInfo[]): boolean => {
+				return varInfos.some((varInfo: VariableInfo) => {
+					return varInfo.definedAt
+						? position.isAfterOrEqual(varInfo.definedAt)
+						: false
+				})
+			},
+		)
 	}
 
 	public async getVariableInfo(
 		doc: TextDocument,
-		varName: string,
+		varName: variableName,
 		position: vscode.Position,
 	): Promise<VariableInfo | null> {
 		let docInfo = this.cache.get(doc)
@@ -96,7 +99,7 @@ export class LatteFileInfoProvider {
 
 	public static findVariableInfo(
 		variableDefinitions: VariableDefinitions,
-		varName: string,
+		varName: variableName,
 		position: vscode.Position,
 	): VariableInfo | null {
 		// Get all known definitions for this variable...
@@ -123,7 +126,7 @@ export class LatteTagsProcessor {
 		const msg = debugMessage('Scanning Latte document')
 
 		const parsed = parseLatte(doc.getText())
-		const varDefs = new Map<string, VariableInfo[]>()
+		const varDefs = new Map<variableName, VariableInfo[]>()
 
 		for (let tag of parsed) {
 			if (isInstanceOf(tag, VarTag, VarTypeTag, DefaultTag)) {
@@ -149,9 +152,9 @@ export class LatteTagsProcessor {
 	}
 
 	private static async processVariableTags(
-		varDefs: Map<string, VariableInfo[]>,
+		varDefs: Map<variableName, VariableInfo[]>,
 		tag: VarTag | VarTypeTag | DefaultTag,
-		doc: vscode.TextDocument,
+		doc: TextDoc,
 	): VoidPromise {
 		const varInfo: VariableInfo = {
 			name: tag.varName,
@@ -175,9 +178,9 @@ export class LatteTagsProcessor {
 	}
 
 	private static async processForeachTag(
-		varDefs: Map<string, VariableInfo[]>,
+		varDefs: Map<variableName, VariableInfo[]>,
 		tag: ForeachTag,
-		doc: vscode.TextDocument,
+		doc: TextDoc,
 	): VoidPromise {
 		const varName = tag.iteratesAsVarName
 		const iterableVarName = tag.iteratesVarName
@@ -203,9 +206,9 @@ export class LatteTagsProcessor {
 	}
 
 	private static async processIncludeTag(
-		varDefs: Map<string, VariableInfo[]>,
+		varDefs: Map<variableName, VariableInfo[]>,
 		tag: IncludeTag,
-		doc: vscode.TextDocument,
+		doc: TextDoc,
 	): VoidPromise {
 		// TODO
 	}

@@ -1,26 +1,35 @@
-import { readTestDataFile } from '../../../tests/testUtils'
+import { readTestDataFile } from '../../../../tests/testUtils'
 import { captureBalanced } from '../captureBalanced'
 import { BalancedCaptureResult } from '../types'
 
 const EXPECTED_1 = `use SmartObject;
 
-  public function __construct(
-    private EntityFileSystemService $entityFileSystemService,
-  ) {}
+	public function __construct(
+		private EntityFileSystemService $entityFileSystemService,
+	) {}
 
-  public function wakeupArtifact(?ActiveRow $row): ?DbArtifact {
-    return $row
-      ? new DbArtifact($row, $this, $this->entityFileSystemService)
-      : null;
-  }
+	public function someClass_method_1_public(string $stringArg): bool {
+		return true;
+	}
 
-  public function wakeupBucket(?ActiveRow $row): ?DbBucket {
-    return $row
-      ? new DbBucket($row, $this, $this->entityFileSystemService)
-      : null;
-  }`
+	public function someClass_method_2_public(SomeClass $someClassArg): SomeSubClass {
+		return $this;
+	}
+
+	public static function someClass_method_3_public_static(): string {
+		return self::class;
+	}
+
+	private function someClass_method_4_private(): array|bool {
+		return [];
+	}
+
+	protected function someClass_method_5_protected(): int {
+		return 1;
+	}`
 
 const EXPECTED_2 = `private EntityFileSystemService $entityFileSystemService,`
+const EXPECTED_3 = `return $this;`
 
 test('captureBalanced: PHP class contents', () => {
 	const str = readTestDataFile(`SomeClass.php`)
@@ -36,11 +45,15 @@ test('captureBalanced: PHP class contents', () => {
 
 	result = captureBalanced(['(', ')'], str, 256)
 	expect(result?.content.trim()).toBe(EXPECTED_2)
-	expect(result?.offset).toBe(262)
+	expect(result?.offset).toBe(260)
 
 	result = captureBalanced(['{', '}'], str, 256)
 	expect(result?.content.trim()).toBe('')
-	expect(result?.offset).toBe(330)
+	expect(result?.offset).toBe(325)
+
+	result = captureBalanced(['{', '}'], str, 476)
+	expect(result?.content.trim()).toBe(EXPECTED_3)
+	expect(result?.offset).toBe(500)
 })
 
 test('captureBalanced: Basics', () => {
