@@ -7,7 +7,7 @@
     "url": "https://github.com/smuuf/vscode-latte-lang"
   },
   "description": "Support for Latte (Nette) template files.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "scripts": {
     "test": "bun test",
     "clear-build": "rm -rf ./out/*",
