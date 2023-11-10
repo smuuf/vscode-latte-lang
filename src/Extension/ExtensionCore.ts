@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { parsePhpType } from './phpTypeParser/phpTypeParser'
+import { extractBaseClassName, parsePhpType } from './phpTypeParser/phpTypeParser'
 import { LatteFileInfoProvider } from './LatteFileInfoProvider'
 import {
 	PhpWorkspaceInfoProvider,
@@ -9,7 +9,7 @@ import {
 import { DefinitionProviderAggregator } from './DefinitionProviders'
 import { METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
 import { mapMap } from './utils/common'
-import { buildCommandUri } from './utils/common.vscode'
+import { buildCommandMarkdownLink, getPositionAtOffset } from './utils/common.vscode'
 import { WorkspaceEvents } from './WorkspaceEvents'
 import { PhpMethodInfo } from './DumbPhpParser/types'
 
@@ -133,13 +133,17 @@ class ExtensionHoverProvider implements vscode.HoverProvider {
 
 		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(varStr)
 		if (classInfo && classInfo.location?.uri) {
-			const commandUriStr = buildCommandUri('vscode.open', [classInfo.location.uri])
-			varStr = `[\`${varStr}\`](${commandUriStr})`
+			varStr = buildCommandMarkdownLink({
+				title: varStr,
+				tooltip: 'Open file',
+				command: 'vscode.open',
+				args: [classInfo.location.uri],
+			})
 			md.isTrusted = true
 		} else {
 			varStr = `\`${varStr}\``
 		}
-		md.appendMarkdown(`_variable_ ${varStr} \`${varInfo.name}\``)
+		md.appendMarkdown(`_var_ ${varStr} \`${varInfo.name}\``)
 
 		return new vscode.Hover(md)
 	}
@@ -182,7 +186,24 @@ class ExtensionHoverProvider implements vscode.HoverProvider {
 
 		const md = new vscode.MarkdownString()
 		let returnTypeStr = methodInfo.returnType?.repr ?? 'mixed'
-		md.appendMarkdown(`_returns_ \`${returnTypeStr}\``)
+		const baseClassName = extractBaseClassName(className)
+
+		const methodPosition: vscode.Position = await getPositionAtOffset(
+			methodInfo.offset,
+			classInfo.location.uri,
+		)
+		const methodUri = classInfo.location.uri.with({
+			fragment: `L${methodPosition.line + 1},${methodPosition.character + 1}`,
+		})
+
+		const methodLink = buildCommandMarkdownLink({
+			title: `${baseClassName}::${methodInfo.name}`,
+			tooltip: 'Open file',
+			command: 'vscode.open',
+			args: [methodUri],
+		})
+		md.isTrusted = true
+		md.appendMarkdown(`_method_ ${methodLink} _returns_ \`${returnTypeStr}\``)
 
 		return new vscode.Hover(md)
 	}
@@ -295,7 +316,12 @@ class ExtensionCompletionItemProvider implements vscode.CompletionItemProvider {
 					vscode.CompletionItemKind.Method,
 				)
 
-				item.detail = `${subjectClass.fqn}::${method.name}(...)${method.returnType?.repr}`
+				const md = new vscode.MarkdownString()
+				md.appendMarkdown(`**${method.name}(...)**`)
+				item.documentation = md
+
+				item.detail = method.returnType?.repr ?? 'mixed'
+
 				// Place the name of the method + parentheses and place
 				// the cursor inside those parentheses (snippets do
 				// support this).

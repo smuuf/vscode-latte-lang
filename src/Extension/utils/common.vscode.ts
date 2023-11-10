@@ -29,6 +29,17 @@ export function buildCommandUri(command: string, args: object): string {
 	return `command:${command}?${encodeURIComponent(JSON.stringify(args))}`
 }
 
+export function buildCommandMarkdownLink(options: {
+	title: string
+	tooltip: string | undefined
+	command: string
+	args: any[]
+}): string {
+	const { title, tooltip = '', command, args } = options
+	const commandUriStr = buildCommandUri(command, args)
+	return `[\`${title}\`](${commandUriStr} "${tooltip}")`
+}
+
 const debugMessage = config.debugging
 	? (msg: string): vscode.Disposable => vscode.window.setStatusBarMessage(msg, 5_000)
 	: () => ({ dispose: () => {} }) // Fake disposable.
