@@ -32,6 +32,30 @@ const allowedTransfers: TransferDefinition = {
 	],
 }
 
+/**
+ * Mapping of region-type transfers which should be ignored.
+ *
+ * The key is the new region-type (into which the transfer happens), the value
+ * is a list of either:
+ *
+ * 1. Current region-type from which the transfer to the new region-type will be
+ *    ignored.
+ *    For example: `{RegionType.HTML_TAG: [RegionType.LATTE_TAG]}` means
+ *    "if current region-type is LATTE_TAG and the scanner encounters
+ *    a start of region of type HTML_TAG, the transfer is ignored and we
+ *    stay in LATTE_TAG region type".
+ *
+ * 2. A list of region-types, which represent a chain in region-type stack
+ *    which - if it matches with the top items in the current region-type
+ *    stack - will make the new region type to be ignored.
+ *    For example: `{RegionType.HTML_TAG: [[RegionType.QUOTES_S,
+ *    RegionType.HTML_TAG]]}` means "if we're currently in the QUOTES_S
+ *    region-type, which itself is inside HTML_TAG region-type, the transfer
+ *    into HTML_TAG region-type is ignored and we stay in QUOTES_S region type".
+ *
+ * If any of the values in the list for each mapping item matches, the transfer
+ * is ignored.
+ */
 const ignoredTransfers: TransferDefinition = {
 	[RegionType.QUOTES_S]: [RegionType.QUOTES_D, RegionType.LATTE_TAG, RegionType.HTML],
 	[RegionType.QUOTES_D]: [RegionType.QUOTES_S, RegionType.LATTE_TAG, RegionType.HTML],

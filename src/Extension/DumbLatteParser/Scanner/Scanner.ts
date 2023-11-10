@@ -8,12 +8,15 @@ const WORD_REGEX = /[a-zA-Z_][a-zA-Z0-9_-]*/
 const QUOTED_STRING_REGEX = /(")(?<s1>(?:\\"|[^"])+)\1|(')(?<s2>(?:\\'|[^'])+)\1/
 
 export class Scanner {
-	private source: string
 	private state!: ScannerState
 	private tags!: DumbTag[]
 
-	constructor(source: string) {
-		this.source = source
+	/**
+	 * @param source
+	 * @param strict Don't fail completely after encountering an errorenous
+	 * situation.
+	 */
+	constructor(private source: string, private strict: boolean = false) {
 		this.initState()
 	}
 
@@ -32,6 +35,10 @@ export class Scanner {
 	}
 
 	private error(msg: string): void {
+		if (!this.strict) {
+			return
+		}
+
 		throw new Error(`Offset ${this.state.offset}: ${msg}`)
 	}
 
