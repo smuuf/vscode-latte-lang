@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
 import DumbTag from './Scanner/DumbTag'
 import { Scanner } from './Scanner/Scanner'
-import { createFromDumbTag } from './Tags/tagFactory'
 import { AbstractTag, ParsingContext } from './types'
 import { isString } from '../utils/common'
+import { createFromDumbTag } from './Tags/TagFactory'
 
 export function parseLatte(
 	source: string,
