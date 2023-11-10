@@ -118,6 +118,13 @@ export function normalizeTypeName(
 }
 
 /**
+ * Returns the class name string without any namespace.
+ */
+export function extractBaseClassName(name: string): string {
+	return name.substring(name.lastIndexOf('\\') + 1)
+}
+
+/**
  * Returns a string representation For a given, possibly nested, AST
  * representing a PHP type.
  */

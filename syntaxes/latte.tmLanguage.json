@@ -10,13 +10,13 @@
 			"name": "comment.block.latte"
 		},
 		{
-			"begin": "\\{",
+			"begin": "\\{(\\{)?",
 			"beginCaptures": {
 				"0": {
 					"name": "punctuation.definition.tag.begin.latte"
 				}
 			},
-			"end": "\\}",
+			"end": "\\}(\\})?",
 			"endCaptures": {
 				"0": {
 					"name": "punctuation.definition.tag.end.latte"

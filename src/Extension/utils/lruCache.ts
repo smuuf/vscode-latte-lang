@@ -1,9 +1,9 @@
 import { KeyedCircularBuffer } from './KeyedCircularBuffer'
 
-export function lruCache(fn: CallableFunction, maxSize = 200) {
+export function lruCache<F extends (...args: any[]) => any>(fn: F, maxSize = 200): F {
 	const buffer = new KeyedCircularBuffer<string, any>(maxSize)
 
-	return (...args: any[]) => {
+	return <F>function (...args: any[]) {
 		const key: string = JSON.stringify(args)
 
 		if (buffer.has(key)) {
