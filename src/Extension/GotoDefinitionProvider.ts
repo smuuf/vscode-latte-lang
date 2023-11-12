@@ -4,27 +4,30 @@ import { ExtensionCore } from './ExtensionCore'
 import { getPositionAtOffset } from './utils/common.vscode'
 import { normalizeTypeName } from './phpTypeParser/phpTypeParser'
 
-interface DefinitionProvider {
-	resolve: (doc: TextDoc, position: vscode.Position) => DefinitionProviderReturnValue
+interface GotoDefinitionProvider {
+	resolve: (
+		doc: TextDoc,
+		position: vscode.Position,
+	) => GotoDefinitionProviderReturnValue
 }
 
-type DefinitionProviderReturnValue = Promise<
+type GotoDefinitionProviderReturnValue = Promise<
 	vscode.Location | vscode.LocationLink[] | null
 >
 
-export class DefinitionProviderAggregator {
-	providers: Map<string, DefinitionProvider>
+export class GotoDefinitionProviderAggregator {
+	providers: Map<string, GotoDefinitionProvider>
 
 	public constructor(extCore: ExtensionCore) {
-		this.providers = new Map<string, DefinitionProvider>()
+		this.providers = new Map<string, GotoDefinitionProvider>()
 
 		// Order is important!
-		this.addProvider('variable', new VariableNameDefinitionProvider(extCore))
-		this.addProvider('methodCall', new MethodCallDefinitionProvider(extCore))
-		this.addProvider('class', new ClassDefinitionProvider(extCore))
+		this.addProvider('variable', new VariableNameGotoDefinitionProvider(extCore))
+		this.addProvider('methodCall', new MethodCallGotoDefinitionProvider(extCore))
+		this.addProvider('class', new ClassGotoDefinitionProvider(extCore))
 	}
 
-	public addProvider(name: string, provider: DefinitionProvider): void {
+	public addProvider(name: string, provider: GotoDefinitionProvider): void {
 		this.providers.set(name, provider)
 	}
 
@@ -32,7 +35,7 @@ export class DefinitionProviderAggregator {
 		doc: TextDoc,
 		position: vscode.Position,
 		token: vscode.CancellationToken,
-	): Promise<DefinitionProviderReturnValue> {
+	): Promise<GotoDefinitionProviderReturnValue> {
 		// Go through each of the registered providers and let them do their
 		// thing. The first provider to return a non-null value will win and
 		// its return value will be the ultimate result.
@@ -54,7 +57,7 @@ export class DefinitionProviderAggregator {
 /**
  * Provider a location of a relevant Latte variable definition in Latte file.
  */
-class VariableNameDefinitionProvider {
+class VariableNameGotoDefinitionProvider {
 	extCore: ExtensionCore
 
 	public constructor(extCore: ExtensionCore) {
@@ -64,7 +67,7 @@ class VariableNameDefinitionProvider {
 	public async resolve(
 		doc: TextDoc,
 		position: vscode.Position,
-	): DefinitionProviderReturnValue {
+	): GotoDefinitionProviderReturnValue {
 		const range = doc.getWordRangeAtPosition(position, VARIABLE_REGEX)
 		if (!range) {
 			return null
@@ -93,7 +96,7 @@ class VariableNameDefinitionProvider {
 /**
  * Provider a location of a method definition from its invocation in Latte file.
  */
-class MethodCallDefinitionProvider {
+class MethodCallGotoDefinitionProvider {
 	extCore: ExtensionCore
 
 	public constructor(extCore: ExtensionCore) {
@@ -103,7 +106,7 @@ class MethodCallDefinitionProvider {
 	public async resolve(
 		doc: TextDoc,
 		position: vscode.Position,
-	): DefinitionProviderReturnValue {
+	): GotoDefinitionProviderReturnValue {
 		const range = doc.getWordRangeAtPosition(position, METHOD_CALL_REGEX)
 		if (!range) {
 			return null
@@ -173,7 +176,7 @@ class MethodCallDefinitionProvider {
 /**
  * Provider a location of a class definition from its reference in Latte file.
  */
-class ClassDefinitionProvider {
+class ClassGotoDefinitionProvider {
 	extCore: ExtensionCore
 
 	public constructor(extCore: ExtensionCore) {
@@ -183,7 +186,7 @@ class ClassDefinitionProvider {
 	public async resolve(
 		doc: TextDoc,
 		position: vscode.Position,
-	): DefinitionProviderReturnValue {
+	): GotoDefinitionProviderReturnValue {
 		const range = doc.getWordRangeAtPosition(position, CLASS_NAME_REGEX)
 		if (!range) {
 			return null
