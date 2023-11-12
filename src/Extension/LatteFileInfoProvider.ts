@@ -10,7 +10,7 @@ import { debugMessage, getPositionAtOffset } from './utils/common.vscode'
 import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
 import IncludeTag from './DumbLatteParser/Tags/IncludeTag'
 import { ExtensionCore } from './ExtensionCore'
-import { LANG_ID_LATTE } from '../langIds'
+import { LANG_ID_LATTE } from '../constants'
 
 export type VariableInfo = {
 	name: string

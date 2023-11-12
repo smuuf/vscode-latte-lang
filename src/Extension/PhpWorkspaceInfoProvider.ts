@@ -4,7 +4,7 @@ import { parsePhp } from './DumbPhpParser/parser'
 import { PhpClassInfo, PhpMethodInfo, SymbolVisibility } from './DumbPhpParser/types'
 import { ExtensionCore } from './ExtensionCore'
 import { DefaultMap } from './utils/DefaultMap'
-import { FILE_EXT_PHP, LANG_ID_PHP } from '../langIds'
+import { FILE_EXT_PHP, LANG_ID_PHP } from '../constants'
 
 class PhpWorkspaceInfo {
 	// Yes, there can be multiple same-fully-qualified PHP class names in the

@@ -1,12 +1,12 @@
 {
   "name": "latte-lang",
   "publisher": "smuuf",
-  "displayName": "Latte templates",
+  "displayName": "Nette Latte templates",
   "repository": {
     "type": "git",
     "url": "https://github.com/smuuf/vscode-latte-lang"
   },
-  "description": "Support for Latte (Nette) template files.",
+  "description": "Support for Nette Latte template files.",
   "version": "0.0.2",
   "scripts": {
     "test": "bun test",

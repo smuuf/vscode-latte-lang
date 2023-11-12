@@ -1,5 +1,6 @@
 import { lruCache } from '../utils/lruCache.js'
-import * as parser from './parser.js'
+import { BASIC_ITERABLES, BUILTIN_TYPES } from './definitions.js'
+import * as parser from './parser/parser.js'
 import { ParsingContext } from './types.js'
 
 //
@@ -22,35 +23,6 @@ type SingleType = {
 	iteratesAs: IterationSpec
 	nullable: boolean
 }
-
-/**
- * See https://www.php.net/manual/en/language.types.type-system.php
- */
-const BUILTIN_TYPES = [
-	'null',
-	'false',
-	'true',
-	'bool',
-	'int',
-	'float',
-	'string',
-	'array',
-	'object',
-	'iterable',
-	'mixed',
-	'resource',
-	'never',
-	'void',
-]
-
-const BASIC_ITERABLES = [
-	'array',
-	'iterable',
-	'Iterator',
-	'IteratorAggregate',
-	'Traversable',
-	'Generator',
-]
 
 export function resolveMaybeImportedName(
 	name: string,
@@ -118,26 +90,19 @@ export function normalizeTypeName(
 }
 
 /**
- * Returns the class name string without any namespace.
- */
-export function extractBaseClassName(name: string): string {
-	return name.substring(name.lastIndexOf('\\') + 1)
-}
-
-/**
  * Returns a string representation For a given, possibly nested, AST
  * representing a PHP type.
  */
-function stringifyType(typeAst: any, parsingContext: ParsingContext): string {
+function stringifyTypeAst(typeAst: any, parsingContext: ParsingContext): string {
 	const union = typeAst.union as Array<any>
 	if (union) {
-		const list = union.map((item: any) => stringifyType(item, parsingContext))
+		const list = union.map((item: any) => stringifyTypeAst(item, parsingContext))
 		return list.join('|')
 	}
 
 	const template = typeAst.template as Array<any>
 	if (template) {
-		const list = template.map((item: any) => stringifyType(item, parsingContext))
+		const list = template.map((item: any) => stringifyTypeAst(item, parsingContext))
 		return `${normalizeTypeName(typeAst.type, parsingContext)}<${list.join(', ')}>`
 	}
 
@@ -151,7 +116,7 @@ function processTypeAst(typeAst: any, parsingContext: ParsingContext): PhpType {
 	if (typeAst.union) {
 		return {
 			types: typeAst.union.map((item: any) => processTypeAst(item, parsingContext)),
-			repr: stringifyType(typeAst, parsingContext),
+			repr: stringifyTypeAst(typeAst, parsingContext),
 			iteratesAs: null,
 			nullable: false,
 		}
@@ -173,7 +138,7 @@ function processTypeAst(typeAst: any, parsingContext: ParsingContext): PhpType {
 
 	return {
 		name: normalizeTypeName(typeAst.type, parsingContext),
-		repr: stringifyType(typeAst, parsingContext),
+		repr: stringifyTypeAst(typeAst, parsingContext),
 		iteratesAs: determineIterationItem(
 			typeAst.type,
 			typeAst.template || null,

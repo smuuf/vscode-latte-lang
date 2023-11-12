@@ -9,7 +9,7 @@ import {
 } from './types'
 import { parsePhpTypeRaw, resolveMaybeImportedName } from '../phpTypeParser/phpTypeParser'
 import { captureBalanced } from '../utils/captureBalanced'
-import { dump, matchRegexFromIndex } from '../utils/common'
+import { matchRegexFromIndex } from '../utils/common'
 
 const NS_REGEX = /namespace\s+([^;]+);/
 

@@ -3,6 +3,8 @@ import { VARIABLE_REGEX } from './regexes'
 import { ExtensionCore } from './ExtensionCore'
 import { mapMap } from './utils/common'
 import { PhpMethodInfo } from './DumbPhpParser/types'
+import { getPhpTypeRepr } from './phpTypeParser/utils'
+import { ELLIPSIS } from '../constants'
 
 interface CompletionProvider {
 	resolve: (
@@ -96,7 +98,7 @@ class VariableNameCompletionProvider {
 				// multiple times in the document). Use the last one (that is:
 				// the most actual definition of the variable at specified
 				// position).
-				item.detail = v[v.length - 1].type?.repr
+				item.detail = getPhpTypeRepr(v[v.length - 1].type)
 				item.range = new vscode.Range(position.translate(0, -1), position)
 				return item
 			}).values(),
@@ -141,7 +143,7 @@ class MethodCallCompletionProvider {
 			return null
 		}
 
-		let subjectType = subjectVar.type.repr
+		let subjectType = getPhpTypeRepr(subjectVar.type)
 		const subjectClass =
 			this.extCore.phpWorkspaceInfoProvider.getClassInfo(subjectType)
 
@@ -163,10 +165,10 @@ class MethodCallCompletionProvider {
 			)
 
 			const md = new vscode.MarkdownString()
-			md.appendMarkdown(`**${method.name}(...)**`)
+			md.appendMarkdown(`**${method.name}(${ELLIPSIS})**`)
 			item.documentation = md
 
-			item.detail = method.returnType?.repr ?? 'mixed'
+			item.detail = getPhpTypeRepr(method.returnType)
 
 			// Place the name of the method + parentheses and place
 			// the cursor inside those parentheses (snippets do

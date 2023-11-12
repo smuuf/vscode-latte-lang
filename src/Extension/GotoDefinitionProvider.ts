@@ -3,6 +3,7 @@ import { CLASS_NAME_REGEX, METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
 import { ExtensionCore } from './ExtensionCore'
 import { getPositionAtOffset } from './utils/common.vscode'
 import { normalizeTypeName } from './phpTypeParser/phpTypeParser'
+import { getPhpTypeRepr } from './phpTypeParser/utils'
 
 interface GotoDefinitionProvider {
 	resolve: (
@@ -133,7 +134,7 @@ class MethodCallGotoDefinitionProvider {
 			return null
 		}
 
-		let className = subjectVarInfo.type.repr
+		let className = getPhpTypeRepr(subjectVarInfo.type)
 
 		// The requested symbol is a class name.
 		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(className)

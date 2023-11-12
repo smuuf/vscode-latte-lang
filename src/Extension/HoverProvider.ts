@@ -1,8 +1,10 @@
 import * as vscode from 'vscode'
 import { METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
 import { ExtensionCore } from './ExtensionCore'
-import { extractBaseClassName, parsePhpType } from './phpTypeParser/phpTypeParser'
+import { parsePhpType } from './phpTypeParser/phpTypeParser'
+import { getClassBaseName, getPhpTypeRepr } from './phpTypeParser/utils'
 import { buildCommandMarkdownLink, getPositionAtOffset } from './utils/common.vscode'
+import { ELLIPSIS } from '../constants'
 
 interface HoverProvider {
 	resolve: (doc: TextDoc, position: vscode.Position) => HoverProviderReturnValue
@@ -83,9 +85,9 @@ class VariableNameHoverProvider {
 		}
 
 		const md = new vscode.MarkdownString()
-		let varStr = varInfo.type ? varInfo.type.repr : 'mixed'
+		let typeRepr = getPhpTypeRepr(varInfo.type)
 
-		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(varStr)
+		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(typeRepr)
 		if (classInfo && classInfo.location?.uri) {
 			const classPosition: vscode.Position = await getPositionAtOffset(
 				classInfo.location.offset,
@@ -95,8 +97,8 @@ class VariableNameHoverProvider {
 				fragment: `L${classPosition.line + 1},${classPosition.character + 1}`,
 			})
 
-			varStr = buildCommandMarkdownLink({
-				title: varStr,
+			typeRepr = buildCommandMarkdownLink({
+				title: typeRepr,
 				tooltip: 'Open file',
 				command: 'vscode.open',
 				args: [classUri],
@@ -104,10 +106,10 @@ class VariableNameHoverProvider {
 
 			md.isTrusted = true
 		} else {
-			varStr = `\`${varStr}\``
+			typeRepr = `\`${typeRepr}\``
 		}
 
-		md.appendMarkdown(`_var_ ${varStr} \`${varInfo.name}\``)
+		md.appendMarkdown(`_var_ ${typeRepr} \`${varInfo.name}\``)
 
 		return new vscode.Hover(md)
 	}
@@ -153,7 +155,7 @@ class MethodCallHoverProvider {
 			return null
 		}
 
-		let className = subjectVarInfo.type.repr
+		let className = getPhpTypeRepr(subjectVarInfo.type)
 		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(className)
 		if (!classInfo || !classInfo.location) {
 			return null
@@ -165,8 +167,8 @@ class MethodCallHoverProvider {
 		}
 
 		const md = new vscode.MarkdownString()
-		let returnTypeStr = methodInfo.returnType?.repr ?? 'mixed'
-		const baseClassName = extractBaseClassName(className)
+		let returnTypeStr = getPhpTypeRepr(methodInfo.returnType)
+		const baseClassName = getClassBaseName(className)
 
 		const methodPosition: vscode.Position = await getPositionAtOffset(
 			methodInfo.offset,
@@ -177,7 +179,7 @@ class MethodCallHoverProvider {
 		})
 
 		const methodLink = buildCommandMarkdownLink({
-			title: `${baseClassName}::${methodInfo.name}`,
+			title: `${baseClassName}::${methodInfo.name}(${ELLIPSIS})`,
 			tooltip: 'Open file',
 			command: 'vscode.open',
 			args: [methodUri],
