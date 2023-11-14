@@ -30,9 +30,11 @@ export type LatteFileInfo = {
 export class LatteFileInfoProvider {
 	cache: Map<TextDocument, LatteFileInfo>
 	latteTagsProcessor: LatteTagsProcessor
+	scanningInProgress: Set<TextDoc>
 
 	public constructor(private extCore: ExtensionCore) {
 		this.cache = new Map()
+		this.scanningInProgress = new Set()
 
 		// Register file-change events.
 		const workspaceEvents = extCore.workspaceEvents
@@ -49,8 +51,19 @@ export class LatteFileInfoProvider {
 		this.cache.delete(doc)
 	}
 
-	private async rescanFile(doc: TextDocument): Promise<LatteFileInfo> {
+	private async rescanFile(doc: TextDocument): Promise<LatteFileInfo | null> {
+		// Avoid rescan infinite-loop. PhpTypeFromExpression can cause this,
+		// because it can be asked to infer type during scanning of the
+		// document, but PhpTypeFromExpression itself can cause a rescan,
+		// because it calls 'getVariableInfo'.
+		if (this.scanningInProgress.has(doc)) {
+			return null
+		}
+
+		this.scanningInProgress.add(doc)
 		const docInfo = await this.latteTagsProcessor.scan(doc)
+		this.scanningInProgress.delete(doc)
+
 		this.cache.set(doc, docInfo)
 		return docInfo
 	}
@@ -58,10 +71,13 @@ export class LatteFileInfoProvider {
 	public async getVariablesAtPosition(
 		doc: TextDocument,
 		position: vscode.Position | null,
-	): Promise<VariableDefinitions> {
-		let docInfo = this.cache.get(doc)
+	): Promise<VariableDefinitions | null> {
+		let docInfo = this.cache.get(doc) || null
 		if (!docInfo) {
 			docInfo = await this.rescanFile(doc)
+			if (!docInfo) {
+				return null
+			}
 		}
 
 		let vars = docInfo.variables
@@ -90,9 +106,12 @@ export class LatteFileInfoProvider {
 		varName: variableName,
 		position: vscode.Position,
 	): Promise<VariableInfo | null> {
-		let docInfo = this.cache.get(doc)
+		let docInfo = this.cache.get(doc) || null
 		if (!docInfo) {
 			docInfo = await this.rescanFile(doc)
+			if (!docInfo) {
+				return null
+			}
 		}
 
 		const varInfo = LatteFileInfoProvider.findVariableInfo(

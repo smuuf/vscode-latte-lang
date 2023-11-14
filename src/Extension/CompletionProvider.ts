@@ -82,6 +82,9 @@ class VariableNameCompletionProvider {
 		// Variable completion. E.g. "$...".
 		const varsAtPosition =
 			await this.extCore.latteFileInfoProvider.getVariablesAtPosition(doc, position)
+		if (!varsAtPosition) {
+			return null
+		}
 
 		// Create a list of completion items from variables available/known at
 		// specified position.
