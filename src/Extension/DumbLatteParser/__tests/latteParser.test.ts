@@ -17,6 +17,7 @@ test('Test parser', () => {
 				endOffset: 11,
 			},
 			null,
+			null,
 			5,
 		),
 		new VarTag(
@@ -26,6 +27,7 @@ test('Test parser', () => {
 				endOffset: 29,
 			},
 			parsePhpType('bool'),
+			null,
 			23,
 		),
 		new VarTypeTag(
@@ -44,6 +46,7 @@ test('Test parser', () => {
 				endOffset: 121,
 			},
 			null,
+			'4',
 			110,
 		),
 		new DefaultTag(
@@ -53,6 +56,7 @@ test('Test parser', () => {
 				endOffset: 150,
 			},
 			parsePhpType('int|float'),
+			'5',
 			141,
 		),
 		new ForeachTag(

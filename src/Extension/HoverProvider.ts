@@ -80,6 +80,7 @@ class VariableNameHoverProvider {
 			varInfo = {
 				name: varName,
 				type: parsePhpType('unknown'),
+				exprType: null,
 				definedAt: null,
 			}
 		}

@@ -1,9 +1,14 @@
 import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
+import { stringAfterFirstNeedle } from '../../utils/common'
 import { isValidTypeSpec } from '../regexes'
 import { isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
 import { Range, AbstractTag, ParsingContext } from '../types'
 
+/**
+ * {var SomeType<a|b>|c $var = "value"}
+ * {var $var = "value"}
+ */
 export default class VarTag extends AbstractTag {
 	public static readonly DUMB_NAME = 'var'
 
@@ -11,6 +16,7 @@ export default class VarTag extends AbstractTag {
 		readonly varName: string,
 		readonly tagRange: Range,
 		readonly varType: PhpType | null,
+		readonly expression: string | null,
 		readonly nameOffset: integer,
 	) {
 		super()
@@ -31,6 +37,8 @@ export default class VarTag extends AbstractTag {
 				argsParts[0],
 				dumbTag.tagRange,
 				null,
+				// Extract the expression after "=".
+				stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
 				dumbTag.argsOffset + nameOffset,
 			)
 		}
@@ -51,6 +59,8 @@ export default class VarTag extends AbstractTag {
 			argsParts[1],
 			dumbTag.tagRange,
 			parsePhpType(argsParts[0])!,
+			// Extract the expression after "=".
+			stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
 			dumbTag.argsOffset + nameOffset,
 		)
 	}

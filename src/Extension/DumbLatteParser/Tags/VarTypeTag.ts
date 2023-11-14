@@ -3,13 +3,17 @@ import { isValidTypeSpec, isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
 import { Range, AbstractTag, ParsingContext } from '../types'
 
+/**
+ * {varType SomeType<a|b>|c $var}
+ */
 export default class VarTypeTag extends AbstractTag {
 	public static readonly DUMB_NAME = 'varType'
+	readonly expression = null
 
 	constructor(
 		readonly varName: string,
 		readonly tagRange: Range,
-		readonly varType: PhpType,
+		readonly varType: PhpType | null,
 		readonly nameOffset: integer,
 	) {
 		super()

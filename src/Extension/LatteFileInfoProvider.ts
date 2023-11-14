@@ -11,10 +11,12 @@ import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
 import IncludeTag from './DumbLatteParser/Tags/IncludeTag'
 import { ExtensionCore } from './ExtensionCore'
 import { LANG_ID_LATTE } from '../constants'
+import { PhpTypeFromExpression } from './phpTypeParser/PhpTypeFromExpression'
 
 export type VariableInfo = {
 	name: string
 	type: PhpType | null
+	exprType: PhpTypeFromExpression | null
 	definedAt: vscode.Position | null
 }
 
@@ -27,8 +29,9 @@ export type LatteFileInfo = {
 
 export class LatteFileInfoProvider {
 	cache: Map<TextDocument, LatteFileInfo>
+	latteTagsProcessor: LatteTagsProcessor
 
-	public constructor(extCore: ExtensionCore) {
+	public constructor(private extCore: ExtensionCore) {
 		this.cache = new Map()
 
 		// Register file-change events.
@@ -38,6 +41,8 @@ export class LatteFileInfoProvider {
 		workspaceEvents.addDocumentChangeHandler((doc: TextDoc) => {
 			return this.forgetLatteFileInfo(doc)
 		}, LANG_ID_LATTE)
+
+		this.latteTagsProcessor = new LatteTagsProcessor(extCore)
 	}
 
 	public async forgetLatteFileInfo(doc: TextDocument): VoidPromise {
@@ -45,7 +50,7 @@ export class LatteFileInfoProvider {
 	}
 
 	private async rescanFile(doc: TextDocument): Promise<LatteFileInfo> {
-		const docInfo = await LatteTagsProcessor.scan(doc)
+		const docInfo = await this.latteTagsProcessor.scan(doc)
 		this.cache.set(doc, docInfo)
 		return docInfo
 	}
@@ -90,11 +95,24 @@ export class LatteFileInfoProvider {
 			docInfo = await this.rescanFile(doc)
 		}
 
-		return LatteFileInfoProvider.findVariableInfo(
+		const varInfo = LatteFileInfoProvider.findVariableInfo(
 			docInfo.variables,
 			varName,
 			position,
 		)
+
+		// If the variable has an expression from which we can try to infer type
+		// let's do just that.
+		if (varInfo?.exprType?.expr) {
+			varInfo.type = await varInfo.exprType.inferType(
+				doc,
+				position,
+				this.extCore.latteFileInfoProvider,
+				this.extCore.phpWorkspaceInfoProvider,
+			)
+		}
+
+		return varInfo
 	}
 
 	public static findVariableInfo(
@@ -122,13 +140,15 @@ export class LatteFileInfoProvider {
 }
 
 export class LatteTagsProcessor {
-	public static async scan(doc: TextDocument): Promise<LatteFileInfo> {
+	public constructor(private extCore: ExtensionCore) {}
+
+	public async scan(doc: TextDocument): Promise<LatteFileInfo> {
 		const msg = debugMessage('Scanning Latte document')
 
 		const parsed = parseLatte(doc.getText())
 		const varDefs = new Map<variableName, VariableInfo[]>()
 
-		for (let tag of parsed) {
+		for (const tag of parsed) {
 			if (isInstanceOf(tag, VarTag, VarTypeTag, DefaultTag)) {
 				narrowType<VarTag | VarTypeTag | DefaultTag>(tag)
 				await this.processVariableTags(varDefs, tag, doc)
@@ -151,7 +171,7 @@ export class LatteTagsProcessor {
 		}
 	}
 
-	private static async processVariableTags(
+	private async processVariableTags(
 		varDefs: Map<variableName, VariableInfo[]>,
 		tag: VarTag | VarTypeTag | DefaultTag,
 		doc: TextDoc,
@@ -159,6 +179,7 @@ export class LatteTagsProcessor {
 		const varInfo: VariableInfo = {
 			name: tag.varName,
 			type: tag.varType,
+			exprType: new PhpTypeFromExpression(tag.expression),
 			definedAt: await getPositionAtOffset(tag.nameOffset, doc),
 		}
 
@@ -177,7 +198,7 @@ export class LatteTagsProcessor {
 		varDefs.get(varInfo.name)?.push(varInfo)
 	}
 
-	private static async processForeachTag(
+	private async processForeachTag(
 		varDefs: Map<variableName, VariableInfo[]>,
 		tag: ForeachTag,
 		doc: TextDoc,
@@ -186,15 +207,28 @@ export class LatteTagsProcessor {
 		const iterableVarName = tag.iteratesVarName
 		const position = await getPositionAtOffset(tag.tagRange.startOffset, doc)
 
-		const iterableType = LatteFileInfoProvider.findVariableInfo(
+		const iterableVarInfo = LatteFileInfoProvider.findVariableInfo(
 			varDefs,
 			iterableVarName,
 			position,
-		)?.type
+		)
+
+		let iterableType = iterableVarInfo?.type
+		// If the variable has an expression from which we can try to infer type
+		// let's do just that.
+		if (iterableVarInfo?.exprType?.expr) {
+			iterableType = await iterableVarInfo.exprType.inferType(
+				doc,
+				position,
+				this.extCore.latteFileInfoProvider,
+				this.extCore.phpWorkspaceInfoProvider,
+			)
+		}
 
 		const varInfo: VariableInfo = {
 			name: varName,
-			type: iterableType?.iteratesAs ? iterableType.iteratesAs.value : null,
+			type: iterableType?.iteratesAs?.value ?? null,
+			exprType: null,
 			definedAt: position,
 		}
 
@@ -205,7 +239,7 @@ export class LatteTagsProcessor {
 		varDefs.get(varInfo.name)?.push(varInfo)
 	}
 
-	private static async processIncludeTag(
+	private async processIncludeTag(
 		varDefs: Map<variableName, VariableInfo[]>,
 		tag: IncludeTag,
 		doc: TextDoc,

@@ -9,7 +9,7 @@ import VarTypeTag from './VarTypeTag'
 // NOTE: 'unknown' to avoid (I think nonsensical) "Type 'typeof VarTag' is
 // not assignable to type 'typeof AbstractTag'." error, which I don't know
 // how to handle better.
-const KNOWN_TAG_TYPES: (unknown | typeof AbstractTag)[] = [
+const KNOWN_TAG_TYPES: AbstractTag[] = [
 	VarTag,
 	VarTypeTag,
 	DefaultTag,

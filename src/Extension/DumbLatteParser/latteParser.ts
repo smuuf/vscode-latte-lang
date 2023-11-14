@@ -3,7 +3,7 @@ import DumbTag from './Scanner/DumbTag'
 import { Scanner } from './Scanner/Scanner'
 import { AbstractTag, ParsingContext } from './types'
 import { isString } from '../utils/common'
-import { createFromDumbTag } from './Tags/TagFactory'
+import { createFromDumbTag } from './Tags/tagFactory'
 
 export function parseLatte(
 	source: string,

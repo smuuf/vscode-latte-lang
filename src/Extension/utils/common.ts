@@ -90,3 +90,12 @@ export function matchRegexFromIndex(
 	regex.lastIndex = index
 	return regex.exec(subject)
 }
+
+export function stringAfterFirstNeedle(input: string, needle: string): string | null {
+	const index = input.indexOf(needle)
+	if (index === -1) {
+		return null
+	}
+
+	return input.substring(input.indexOf(needle) + needle.length)
+}
