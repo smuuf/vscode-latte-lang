@@ -10,12 +10,14 @@ import {
 import { parsePhpTypeRaw, resolveMaybeImportedName } from '../phpTypeParser/phpTypeParser'
 import { captureBalanced } from '../utils/captureBalanced'
 import { matchRegexFromIndex } from '../utils/common'
+import { parseDocBlockString } from './docBlockParser'
 
 const NS_REGEX = /namespace\s+([^;]+);/
 
 const USE_IMPORT_REGEX = /^use\s+(?<import>[^\s]+);/m
 const CLASS_REGEX = /class\s+(?<name>[^\s]+)(\s+extends\s+(?<parent>[^\s]+)?)?\s*/
-const FUNCTION_REGEX = /(?<flags>(?:[a-z]+\s+)*)function\s+(?<name>[^\s]+)\s*\(/
+const FUNCTION_REGEX =
+	/(?<docblock>\/\*\*.*?\*\/\s+)?(?<flags>(?:[a-z]+\s+)*)function\s+(?<name>[^\s]+)\s*\(/
 
 // This regex takes the possibility of return type being unspecified in account,
 // this way it will stop where we want and will not try to find matches for
@@ -35,7 +37,7 @@ function prepareImportMapping(imports: string[]): Map<string, string> {
 function extractMethodFlags(flagsStr: string): PhpMethodFlags {
 	flagsStr = flagsStr.trim()
 	const flags = new Set(flagsStr.split(/\s+/))
-	let visibility = SymbolVisibility.PUBLIC // Default is public, why not.
+	let visibility = SymbolVisibility.PUBLIC // Default is public.
 
 	if (flags.has('private')) {
 		visibility = SymbolVisibility.PRIVATE
@@ -92,18 +94,29 @@ function extractMethods(
 		return methods
 	}
 
-	const methodRegex = new RegExp(FUNCTION_REGEX.source, 'gd')
+	const methodRegex = new RegExp(FUNCTION_REGEX.source, 'gds')
 	const matches = source.matchAll(methodRegex)
 
 	for (const match of matches) {
-		const where = match.indices![2][0]
+		const where = match.indices![3][0]
 		const methodName = match.groups!['name']
 		const flags = match.groups!['flags'] ?? '' // "private", "protected", "static", etc.
 
 		let returnType = 'mixed' // Default return type.
+
+		// Extract return type defined by PHP syntax.
 		const returnTypeMatch = matchRegexFromIndex(RETURN_TYPE_REGEX, source, where)
 		if (returnTypeMatch) {
 			returnType = returnTypeMatch.groups!['returnType'] ?? returnType
+		}
+
+		// Extract return type from docklock, if it's present.
+		if (match.groups!['docblock']) {
+			const docBlockData = parseDocBlockString(match.groups!['docblock'])
+			const docBlockReturn = docBlockData.tags.get('return')
+			if (docBlockReturn) {
+				returnType = docBlockReturn
+			}
 		}
 
 		const methodDef = {

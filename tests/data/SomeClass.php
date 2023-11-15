@@ -34,6 +34,10 @@ class SomeClass {
 		return [];
 	}
 
+	/**
+	 * lol dockblock
+	 * @return int
+	 */
 	protected function someClass_method_5_protected(): int {
 		return 1;
 	}

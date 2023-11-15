@@ -24,6 +24,10 @@ const EXPECTED_1 = `use SmartObject;
 		return [];
 	}
 
+	/**
+	 * lol dockblock
+	 * @return int
+	 */
 	protected function someClass_method_5_protected(): int {
 		return 1;
 	}`

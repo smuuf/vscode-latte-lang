@@ -110,7 +110,7 @@ class VariableNameHoverProvider {
 			typeRepr = `\`${typeRepr}\``
 		}
 
-		md.appendMarkdown(`_type_ ${typeRepr} _of variable_ \`${varInfo.name}\``)
+		md.appendMarkdown(`_variable_ \`${varInfo.name}\`\n\n_type_ ${typeRepr}`)
 
 		return new vscode.Hover(md)
 	}
@@ -186,7 +186,7 @@ class MethodCallHoverProvider {
 			args: [methodUri],
 		})
 		md.isTrusted = true
-		md.appendMarkdown(`_method_ ${methodLink} _returns_ \`${returnTypeStr}\``)
+		md.appendMarkdown(`_method_ ${methodLink}\n\n_returns_ \`${returnTypeStr}\``)
 
 		return new vscode.Hover(md)
 	}

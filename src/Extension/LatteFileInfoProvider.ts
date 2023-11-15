@@ -30,11 +30,9 @@ export type LatteFileInfo = {
 export class LatteFileInfoProvider {
 	cache: Map<TextDocument, LatteFileInfo>
 	latteTagsProcessor: LatteTagsProcessor
-	scanningInProgress: Set<TextDoc>
 
 	public constructor(private extCore: ExtensionCore) {
 		this.cache = new Map()
-		this.scanningInProgress = new Set()
 
 		// Register file-change events.
 		const workspaceEvents = extCore.workspaceEvents
@@ -51,34 +49,30 @@ export class LatteFileInfoProvider {
 		this.cache.delete(doc)
 	}
 
-	private async rescanFile(doc: TextDocument): Promise<LatteFileInfo | null> {
-		// Avoid rescan infinite-loop. PhpTypeFromExpression can cause this,
-		// because it can be asked to infer type during scanning of the
-		// document, but PhpTypeFromExpression itself can cause a rescan,
-		// because it calls 'getVariableInfo'.
-		if (this.scanningInProgress.has(doc)) {
-			return null
+	private async rescanFile(doc: TextDocument): Promise<LatteFileInfo> {
+		// Prepare empty latte file info object beforehand. It will be mutated
+		// during scanning below, but also can (and will) be queried for
+		// scanned-so-far variables during that scanning.
+		const latteFileInfo: LatteFileInfo = {
+			externalReferences: new Set(),
+			variables: new Map<variableName, VariableInfo[]>(),
 		}
 
-		this.scanningInProgress.add(doc)
-		const docInfo = await this.latteTagsProcessor.scan(doc)
-		this.scanningInProgress.delete(doc)
+		// We immediately store the latte file info object into cache, so that
+		// any methods in this LatteFileInfoProvider called during scanning,
+		// which need this cache entry to exist, will not trigger another
+		// rescan, which would result in a rescan-lopp.
+		this.cache.set(doc, latteFileInfo)
 
-		this.cache.set(doc, docInfo)
-		return docInfo
+		await this.latteTagsProcessor.scan(doc, latteFileInfo)
+		return latteFileInfo
 	}
 
 	public async getVariablesAtPosition(
 		doc: TextDocument,
 		position: vscode.Position | null,
 	): Promise<VariableDefinitions | null> {
-		let docInfo = this.cache.get(doc) || null
-		if (!docInfo) {
-			docInfo = await this.rescanFile(doc)
-			if (!docInfo) {
-				return null
-			}
-		}
+		const docInfo = this.cache.get(doc) || (await this.rescanFile(doc))
 
 		let vars = docInfo.variables
 		if (!position) {
@@ -106,13 +100,7 @@ export class LatteFileInfoProvider {
 		varName: variableName,
 		position: vscode.Position,
 	): Promise<VariableInfo | null> {
-		let docInfo = this.cache.get(doc) || null
-		if (!docInfo) {
-			docInfo = await this.rescanFile(doc)
-			if (!docInfo) {
-				return null
-			}
-		}
+		const docInfo = this.cache.get(doc) || (await this.rescanFile(doc))
 
 		const varInfo = LatteFileInfoProvider.findVariableInfo(
 			docInfo.variables,
@@ -165,33 +153,26 @@ export class LatteFileInfoProvider {
 export class LatteTagsProcessor {
 	public constructor(private extCore: ExtensionCore) {}
 
-	public async scan(doc: TextDocument): Promise<LatteFileInfo> {
+	public async scan(doc: TextDocument, latteFileInfo: LatteFileInfo): VoidPromise {
 		const msg = debugMessage('Scanning Latte document')
-
 		const parsed = parseLatte(doc.getText())
-		const varDefs = new Map<variableName, VariableInfo[]>()
 
 		for (const tag of parsed) {
 			if (isInstanceOf(tag, VarTag, VarTypeTag, DefaultTag)) {
 				narrowType<VarTag | VarTypeTag | DefaultTag>(tag)
-				await this.processVariableTags(varDefs, tag, doc)
+				await this.processVariableTags(latteFileInfo.variables, tag, doc)
 			}
 			if (isInstanceOf(tag, ForeachTag)) {
 				narrowType<ForeachTag>(tag)
-				await this.processForeachTag(varDefs, tag, doc)
+				await this.processForeachTag(latteFileInfo.variables, tag, doc)
 			}
 			if (isInstanceOf(tag, IncludeTag)) {
 				narrowType<IncludeTag>(tag)
-				await this.processIncludeTag(varDefs, tag, doc)
+				await this.processIncludeTag(latteFileInfo.variables, tag, doc)
 			}
 		}
 
 		msg.dispose()
-
-		return {
-			externalReferences: new Set(),
-			variables: varDefs,
-		}
 	}
 
 	private async processVariableTags(
