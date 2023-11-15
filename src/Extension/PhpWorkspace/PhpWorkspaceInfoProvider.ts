@@ -1,10 +1,11 @@
 import * as vscode from 'vscode'
-import { getUriString, statusBarSpinMessage } from './utils/common.vscode'
-import { parsePhp } from './DumbPhpParser/parser'
-import { PhpClassInfo, PhpMethodInfo, SymbolVisibility } from './DumbPhpParser/types'
-import { ExtensionCore } from './ExtensionCore'
-import { DefaultMap } from './utils/DefaultMap'
-import { FILE_EXT_PHP, LANG_ID_PHP } from '../constants'
+import { getUriString, statusBarSpinMessage } from '../utils/common.vscode'
+import { parsePhpSource } from '../DumbPhpParser/parser'
+import { PhpClassInfo, PhpMethodInfo, SymbolVisibility } from '../DumbPhpParser/types'
+import { ExtensionCore } from '../ExtensionCore'
+import { DefaultMap } from '../utils/DefaultMap'
+import { FILE_EXT_PHP, LANG_ID_PHP } from '../../constants'
+import { getPublicMethodsOfClass } from './getPublicMethodsOfClass'
 
 class PhpWorkspaceInfo {
 	// Yes, there can be multiple same-fully-qualified PHP class names in the
@@ -56,7 +57,7 @@ export class PhpWorkspaceInfoProvider {
 
 	private async scanPhpFile(uri: vscode.Uri): VoidPromise {
 		const bytes = await vscode.workspace.fs.readFile(uri)
-		const classes = await parsePhp(bytes.toString(), uri)
+		const classes = await parsePhpSource(bytes.toString(), uri)
 		classes.forEach((cls: PhpClassInfo) => {
 			this.workspaceInfo.classMap.set(cls.fqn, cls)
 			this.workspaceInfo.fileMap.get(getUriString(uri)).add(cls.fqn)
@@ -103,45 +104,9 @@ export class PhpWorkspaceInfoProvider {
 		return this.scanPhpFile(uri)
 	}
 
-	public extractPublicMethodsFromClass(classInfo: PhpClassInfo): PhpMethodInfo[] {
-		const classInfoHierarchyList = [classInfo]
-
-		// If the class has a parent class, iterate up the class hierarchy and
-		// collect all class-infos up to the top - we're going to collect
-		// methods from all of them, because inheritance.
-		let tmpClassInfo: PhpClassInfo | null = classInfo
-		while (tmpClassInfo && tmpClassInfo.parentFqn) {
-			tmpClassInfo = this.getClassInfo(tmpClassInfo.parentFqn)
-			if (tmpClassInfo) {
-				classInfoHierarchyList.push(tmpClassInfo)
-			}
-		}
-
-		// We'll keep track of unique method names - we only want to keep the
-		// first encountered method name (from the most sub-class where
-		// it was found).
-		let uniqueNames = new Set()
-		let result: PhpMethodInfo[] = []
-
-		for (classInfo of classInfoHierarchyList) {
-			// Append found methods from each class in our hierarchy to our
-			// single list of methods.
-			result = result.concat(
-				Array.from(classInfo.methods.values()).filter((method: PhpMethodInfo) => {
-					const include =
-						method.flags.visibility === SymbolVisibility.PUBLIC && // Only public.
-						!uniqueNames.has(method.name) && // Only if not yet encountered.
-						!method.name.match(/^__/) // Exclude PHP magic methods.
-
-					if (include) {
-						uniqueNames.add(method.name)
-					}
-
-					return include
-				}),
-			)
-		}
-
-		return result
+	public getPublicMethodsOfClass(classInfo: PhpClassInfo): PhpMethodInfo[] {
+		return getPublicMethodsOfClass(classInfo, (classFqn: string) =>
+			this.getClassInfo(classFqn),
+		)
 	}
 }

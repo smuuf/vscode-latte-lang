@@ -3,7 +3,7 @@ import { LatteFileInfoProvider } from '../LatteFileInfoProvider'
 import { METHOD_CALL_REGEX } from '../regexes'
 import { PhpType } from './phpTypeParser'
 import { getPhpTypeRepr } from './utils'
-import { PhpWorkspaceInfoProvider } from '../PhpWorkspaceInfoProvider'
+import { PhpWorkspaceInfoProvider } from '../PhpWorkspace/PhpWorkspaceInfoProvider'
 
 export class PhpTypeFromExpression {
 	constructor(public readonly expr: string | null) {}

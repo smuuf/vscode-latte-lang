@@ -28,19 +28,38 @@ export function resolveMaybeImportedName(
 	name: string,
 	parsingContext: ParsingContext | null = null,
 ): string {
-	if (parsingContext) {
-		// If the plain name is something some imported name ends with, return the
-		// fully qualified imported name instead.
-		const importedName = parsingContext.imports.get(name)
-		if (importedName) {
-			return importedName
-		}
+	if (!parsingContext) {
+		return name
+	}
 
-		// If the name doesn't correspond to any of the imported names, the name
-		// is in the same namespace as the file.
-		if (parsingContext.namespace) {
-			return `${parsingContext.namespace}\\${name}`
+	// If the plain name is something some imported name ends with, return the
+	// fully qualified imported name instead.
+	// use A\B\C;
+	// class X extends C {}
+	// ... the result FQN is A\B\C;
+	const importedName = parsingContext.imports.get(name)
+	if (importedName) {
+		return importedName
+	}
+
+	// Partial import.
+	// use A\B\C;
+	// class X extends C\D\E {}
+	// ... the result FQN is A\B\C\D\E.
+	const nsSeparatorIndex = name.indexOf('\\')
+	if (nsSeparatorIndex !== -1) {
+		const firstPart = name.substring(0, nsSeparatorIndex)
+		const importedName = parsingContext.imports.get(firstPart)
+		if (importedName) {
+			const theRest = name.substring(nsSeparatorIndex + 1)
+			return `${importedName}\\${theRest}`
 		}
+	}
+
+	// If the name doesn't correspond to any of the imported names, the name
+	// is in the same namespace as the file.
+	if (parsingContext.namespace) {
+		return `${parsingContext.namespace}\\${name}`
 	}
 
 	return name

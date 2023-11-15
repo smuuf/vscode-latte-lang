@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 
 import { LatteFileInfoProvider } from './LatteFileInfoProvider'
-import { PhpWorkspaceInfoProvider } from './PhpWorkspaceInfoProvider'
-import { GotoDefinitionProviderAggregator } from './GotoDefinitionProvider'
+import { PhpWorkspaceInfoProvider } from './PhpWorkspace/PhpWorkspaceInfoProvider'
+import { GotoDefinitionProviderAggregator } from './VscodeApi/GotoDefinitionProvider'
 import { WorkspaceEvents } from './WorkspaceEvents'
-import { CompletionProviderAggregator } from './CompletionProvider'
-import { HoverProviderAggregator } from './HoverProvider'
+import { CompletionProviderAggregator } from './VscodeApi/CompletionProvider'
+import { HoverProviderAggregator } from './VscodeApi/HoverProvider'
 
 const LANG_ID = 'latte'
 

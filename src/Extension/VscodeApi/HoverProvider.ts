@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
-import { METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
-import { ExtensionCore } from './ExtensionCore'
-import { parsePhpType } from './phpTypeParser/phpTypeParser'
-import { getClassBaseName, getPhpTypeRepr } from './phpTypeParser/utils'
-import { buildCommandMarkdownLink, getPositionAtOffset } from './utils/common.vscode'
-import { ELLIPSIS } from '../constants'
+import { METHOD_CALL_REGEX, VARIABLE_REGEX } from '../regexes'
+import { ExtensionCore } from '../ExtensionCore'
+import { parsePhpType } from '../phpTypeParser/phpTypeParser'
+import { getClassBaseName, getPhpTypeRepr } from '../phpTypeParser/utils'
+import { buildCommandMarkdownLink, getPositionAtOffset } from '../utils/common.vscode'
+import { ELLIPSIS } from '../../constants'
 
 interface HoverProvider {
 	resolve: (doc: TextDoc, position: vscode.Position) => HoverProviderReturnValue
@@ -110,7 +110,7 @@ class VariableNameHoverProvider {
 			typeRepr = `\`${typeRepr}\``
 		}
 
-		md.appendMarkdown(`_var_ ${typeRepr} \`${varInfo.name}\``)
+		md.appendMarkdown(`_type_ ${typeRepr} _of variable_ \`${varInfo.name}\``)
 
 		return new vscode.Hover(md)
 	}

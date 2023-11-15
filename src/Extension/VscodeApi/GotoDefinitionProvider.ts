@@ -1,9 +1,9 @@
 import * as vscode from 'vscode'
-import { CLASS_NAME_REGEX, METHOD_CALL_REGEX, VARIABLE_REGEX } from './regexes'
-import { ExtensionCore } from './ExtensionCore'
-import { getPositionAtOffset } from './utils/common.vscode'
-import { normalizeTypeName } from './phpTypeParser/phpTypeParser'
-import { getPhpTypeRepr } from './phpTypeParser/utils'
+import { CLASS_NAME_REGEX, METHOD_CALL_REGEX, VARIABLE_REGEX } from '../regexes'
+import { ExtensionCore } from '../ExtensionCore'
+import { getPositionAtOffset } from '../utils/common.vscode'
+import { normalizeTypeName } from '../phpTypeParser/phpTypeParser'
+import { getPhpTypeRepr } from '../phpTypeParser/utils'
 
 interface GotoDefinitionProvider {
 	resolve: (

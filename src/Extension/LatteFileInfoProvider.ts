@@ -123,12 +123,16 @@ export class LatteFileInfoProvider {
 		// If the variable has an expression from which we can try to infer type
 		// let's do just that.
 		if (varInfo?.exprType?.expr) {
-			varInfo.type = await varInfo.exprType.inferType(
+			const inferredType = await varInfo.exprType.inferType(
 				doc,
 				position,
 				this.extCore.latteFileInfoProvider,
 				this.extCore.phpWorkspaceInfoProvider,
 			)
+
+			if (inferredType && inferredType.repr !== 'mixed') {
+				varInfo.type = inferredType
+			}
 		}
 
 		return varInfo
@@ -236,12 +240,16 @@ export class LatteTagsProcessor {
 		// If the variable has an expression from which we can try to infer type
 		// let's do just that.
 		if (iterableVarInfo?.exprType?.expr) {
-			iterableType = await iterableVarInfo.exprType.inferType(
+			const inferredType = await iterableVarInfo.exprType.inferType(
 				doc,
 				position,
 				this.extCore.latteFileInfoProvider,
 				this.extCore.phpWorkspaceInfoProvider,
 			)
+
+			if (inferredType && inferredType.repr !== 'mixed') {
+				iterableType = inferredType
+			}
 		}
 
 		const varInfo: VariableInfo = {

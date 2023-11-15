@@ -167,7 +167,7 @@ function extractClasses(
  * Dumb-parses a PHP source code and returns information about defined classes
  * and their properties (e.g. methods).
  */
-export async function parsePhp(
+export async function parsePhpSource(
 	source: string,
 	uri: vscode.Uri | null = null,
 ): Promise<PhpClassInfo[]> {

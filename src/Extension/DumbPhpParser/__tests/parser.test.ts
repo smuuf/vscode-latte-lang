@@ -1,8 +1,7 @@
-import { parsePhp as parsePhpSource } from '../parser'
+import { parsePhpSource as parsePhpSource } from '../parser'
 import { readTestDataFile } from '../../../../tests/testUtils'
 import { SymbolVisibility } from '../types'
 import { parsePhpType } from '../../phpTypeParser/phpTypeParser'
-import { dump } from '../../utils/common'
 
 test('Detect classes: Basic', async () => {
 	const str = readTestDataFile(`SomeClass.php`)
@@ -175,6 +174,42 @@ test('Detect classes: Subclass', async () => {
 							static: false,
 						},
 						returnType: parsePhpType('int'),
+					},
+				],
+			]),
+		},
+	]
+
+	expect(result).toEqual(expected)
+})
+
+test('Detect classes: Subclass', async () => {
+	const str = readTestDataFile(`SomeSubSubClass.php`)
+	let result: any
+
+	result = await parsePhpSource(str)
+
+	const expected = [
+		{
+			fqn: 'App\\Model\\Services\\SubNamespace\\SomeSubSubClass',
+			namespace: 'App\\Model\\Services\\SubNamespace',
+			name: 'SomeSubSubClass',
+			parentFqn: 'App\\Model\\Services\\SomeSubClass',
+			location: {
+				uri: null,
+				offset: str.indexOf('SomeSubSubClass'),
+			},
+			methods: new Map([
+				[
+					'someSubSubClass_method_1_public',
+					{
+						name: 'someSubSubClass_method_1_public',
+						offset: str.indexOf('someSubSubClass_method_1_public'),
+						flags: {
+							visibility: SymbolVisibility.PUBLIC,
+							static: false,
+						},
+						returnType: parsePhpType('bool'),
 					},
 				],
 			]),

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
-import { VARIABLE_REGEX } from './regexes'
-import { ExtensionCore } from './ExtensionCore'
-import { mapMap } from './utils/common'
-import { PhpMethodInfo } from './DumbPhpParser/types'
-import { getPhpTypeRepr } from './phpTypeParser/utils'
-import { ELLIPSIS } from '../constants'
+import { VARIABLE_REGEX } from '../regexes'
+import { ExtensionCore } from '../ExtensionCore'
+import { mapMap } from '../utils/common'
+import { PhpMethodInfo } from '../DumbPhpParser/types'
+import { getPhpTypeRepr } from '../phpTypeParser/utils'
+import { ELLIPSIS } from '../../constants'
 
 interface CompletionProvider {
 	resolve: (
@@ -155,9 +155,7 @@ class MethodCallCompletionProvider {
 		}
 
 		const availableMethods =
-			this.extCore.phpWorkspaceInfoProvider.extractPublicMethodsFromClass(
-				subjectClass,
-			)
+			this.extCore.phpWorkspaceInfoProvider.getPublicMethodsOfClass(subjectClass)
 
 		// Create a list of completion items from public methods present in
 		// the class (or its parent classes) of the type of the variable.

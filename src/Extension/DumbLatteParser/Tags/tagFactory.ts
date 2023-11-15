@@ -27,7 +27,7 @@ export function createFromDumbTag(
 
 	const name = dumbTag.name
 	for (let tagTypeClass of KNOWN_TAG_TYPES) {
-		// NOTE: This cast is also necessarry for typescript to shut up
+		// NOTE: This cast is also necessary for typescript to shut up
 		// about accessing undefined static properties of tag classes which are
 		// defined on their abstract class.
 		if ((tagTypeClass as typeof AbstractTag).DUMB_NAME !== name) {
