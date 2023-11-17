@@ -39,12 +39,9 @@ export class PhpTypeFromExpression {
 		}
 
 		let className = getPhpTypeRepr(subjectVarInfo.type)
-		const classInfo = phpWorkspaceInfoProvider.getClassInfo(className)
-		if (!classInfo) {
-			return null
-		}
-
-		const methodInfo = classInfo.methods.get(methodName)
+		const methodInfo = phpWorkspaceInfoProvider
+			.getPhpClass(className)
+			?.getMethod(methodName)
 		if (!methodInfo || !methodInfo.returnType) {
 			return null
 		}

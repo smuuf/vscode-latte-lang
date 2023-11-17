@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 import config from '../../config'
 import { lruCache } from './lruCache'
+import { isInstanceOf, isString, narrowType } from './common'
 
 export { debugMessage, _getPositionAtOffset as getPositionAtOffset }
 
@@ -57,6 +58,9 @@ async function getPositionAtOffset(
 ): Promise<vscode.Position> {
 	if (isTextDocument(doc)) {
 		return doc.positionAt(offset)
+	} else if (isString(doc)) {
+		narrowType<string>(doc)
+		doc = vscode.Uri.parse(doc)
 	}
 
 	const openedDoc: TextDoc = await vscode.workspace

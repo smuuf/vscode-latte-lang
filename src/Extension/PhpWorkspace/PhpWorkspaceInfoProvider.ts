@@ -1,11 +1,11 @@
 import * as vscode from 'vscode'
 import { getUriString, statusBarSpinMessage } from '../utils/common.vscode'
 import { parsePhpSource } from '../DumbPhpParser/parser'
-import { PhpClassInfo, PhpMethodInfo, SymbolVisibility } from '../DumbPhpParser/types'
+import { PhpClassInfo } from '../DumbPhpParser/types'
 import { ExtensionCore } from '../ExtensionCore'
 import { DefaultMap } from '../utils/DefaultMap'
 import { FILE_EXT_PHP, LANG_ID_PHP } from '../../constants'
-import { getPublicMethodsOfClass } from './getPublicMethodsOfClass'
+import { PhpClass } from './PhpClass'
 
 class PhpWorkspaceInfo {
 	// Yes, there can be multiple same-fully-qualified PHP class names in the
@@ -25,9 +25,12 @@ class PhpWorkspaceInfo {
 
 export class PhpWorkspaceInfoProvider {
 	workspaceInfo: PhpWorkspaceInfo
+	classInfoProviderCallback: (classFqn: string) => PhpClassInfo | null
 
 	public constructor(extCore: ExtensionCore) {
 		this.workspaceInfo = new PhpWorkspaceInfo()
+		this.classInfoProviderCallback = (classFqn: string) =>
+			this.getPhpClassInfo(classFqn)
 
 		if (!this.workspaceInfo.classMap.size) {
 			this.scanWorkspace()
@@ -51,7 +54,16 @@ export class PhpWorkspaceInfoProvider {
 		}, FILE_EXT_PHP)
 	}
 
-	public getClassInfo(className: string): PhpClassInfo | null {
+	public getPhpClass(className: string | null): PhpClass | null {
+		if (!className) {
+			return null
+		}
+
+		const classInfo = this.workspaceInfo.classMap.get(className) || null
+		return classInfo ? new PhpClass(classInfo, this.classInfoProviderCallback) : null
+	}
+
+	public getPhpClassInfo(className: string): PhpClassInfo | null {
 		return this.workspaceInfo.classMap.get(className) || null
 	}
 
@@ -92,7 +104,7 @@ export class PhpWorkspaceInfoProvider {
 			// the locations/files we know they're defined).
 			const classes = workspaceInfo.fileMap.get(uriStr)
 			classes.forEach((classFqn: phpClassFqn) => {
-				if (workspaceInfo.classMap.get(classFqn)?.location?.uri.path === uriStr) {
+				if (workspaceInfo.classMap.get(classFqn)?.location?.uri === uriStr) {
 					workspaceInfo.classMap.delete(classFqn)
 				}
 			})
@@ -102,11 +114,5 @@ export class PhpWorkspaceInfoProvider {
 		}
 
 		return this.scanPhpFile(uri)
-	}
-
-	public getPublicMethodsOfClass(classInfo: PhpClassInfo): PhpMethodInfo[] {
-		return getPublicMethodsOfClass(classInfo, (classFqn: string) =>
-			this.getClassInfo(classFqn),
-		)
 	}
 }

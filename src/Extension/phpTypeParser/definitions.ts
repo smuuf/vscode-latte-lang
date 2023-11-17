@@ -16,6 +16,8 @@ export const BUILTIN_TYPES = [
 	'resource',
 	'never',
 	'void',
+	'static',
+	'self',
 ]
 
 export const BASIC_ITERABLES = [

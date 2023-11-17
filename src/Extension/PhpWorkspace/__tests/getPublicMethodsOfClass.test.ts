@@ -1,7 +1,7 @@
 import { readTestDataFile } from '../../../../tests/testUtils'
 import { parsePhpSource } from '../../DumbPhpParser/parser'
 import { PhpClassInfo, PhpMethodInfo } from '../../DumbPhpParser/types'
-import { getPublicMethodsOfClass } from '../getPublicMethodsOfClass'
+import { PhpClass } from '../PhpClass'
 
 test('Get public methods of class', async () => {
 	let result: PhpClassInfo[]
@@ -14,8 +14,8 @@ test('Get public methods of class', async () => {
 	const ourClasses = await parsePhpSource(readTestDataFile(`SomeSubSubClass.php`))
 	const ourClass = ourClasses[0]
 
-	const p = getPublicMethodsOfClass(ourClass, (fqn) => classes.get(fqn))
-	const methodNames = p.map((method: PhpMethodInfo) => method.name)
+	const p = new PhpClass(ourClass, (fqn) => classes.get(fqn))
+	const methodNames = p.getPublicMethods().map((method: PhpMethodInfo) => method.name)
 
 	expect(methodNames).toEqual([
 		'someSubSubClass_method_1_public',

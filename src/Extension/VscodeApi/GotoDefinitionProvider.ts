@@ -134,22 +134,11 @@ class MethodCallGotoDefinitionProvider {
 			return null
 		}
 
-		let className = getPhpTypeRepr(subjectVarInfo.type)
-
-		// The requested symbol is a class name.
-		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(className)
-		if (!classInfo) {
-			return null
-		}
-
-		const methodInfo = classInfo.methods.get(methodName)
-		if (!methodInfo || !methodInfo.offset) {
-			return null
-		}
-
-		const uri = classInfo?.location?.uri
-		const offset = methodInfo.offset
-		if (!offset || !uri) {
+		const className = getPhpTypeRepr(subjectVarInfo.type)
+		const methodInfo = this.extCore.phpWorkspaceInfoProvider
+			.getPhpClass(className)
+			?.getMethod(methodName)
+		if (!methodInfo || !methodInfo.location) {
 			return null
 		}
 
@@ -161,10 +150,13 @@ class MethodCallGotoDefinitionProvider {
 			range.start.translate(0, methodNameOffset + methodName.length),
 		)
 
-		const pos = await getPositionAtOffset(offset, uri)
+		const pos = await getPositionAtOffset(
+			methodInfo.location.offset,
+			methodInfo.location.uri,
+		)
 		const locationLink: vscode.LocationLink = {
 			targetRange: new vscode.Range(pos, pos),
-			targetUri: uri,
+			targetUri: vscode.Uri.parse(methodInfo.location.uri),
 			// Highlight the whole match our regex captured with the
 			// name of the class.
 			originSelectionRange: originRange,
@@ -198,7 +190,7 @@ class ClassGotoDefinitionProvider {
 		let className = normalizeTypeName(doc.getText(range))
 
 		// The requested symbol is a class name.
-		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(className)
+		const classInfo = this.extCore.phpWorkspaceInfoProvider.getPhpClassInfo(className)
 		if (!classInfo) {
 			return null
 		}
@@ -212,7 +204,7 @@ class ClassGotoDefinitionProvider {
 		const pos = await getPositionAtOffset(offset, uri)
 		const locationLink: vscode.LocationLink = {
 			targetRange: new vscode.Range(pos, pos),
-			targetUri: uri,
+			targetUri: vscode.Uri.parse(uri),
 			// Highlight the whole match our regex captured with the
 			// name of the class.
 			originSelectionRange: range,

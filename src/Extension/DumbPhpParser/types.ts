@@ -1,9 +1,13 @@
-import * as vscode from 'vscode'
 import { PhpType } from '../phpTypeParser/phpTypeParser'
+
+type LocationInfo = {
+	uri: string
+	offset: integer
+} | null
 
 export type PhpMethodInfo = {
 	name: string
-	offset: integer
+	location: LocationInfo
 	flags: PhpMethodFlags
 	returnType?: PhpType | null
 }
@@ -20,16 +24,13 @@ export type PhpClassInfo = {
 	namespace: string
 	parentFqn: string | null
 	fqn: string
-	location: {
-		uri: vscode.Uri
-		offset: integer
-	} | null
+	location: LocationInfo
 	methods: PhpClassMethods
 }
 
 export type ParsingContext = {
 	namespace: string
-	uri: vscode.Uri | null
+	uri: string | null
 	imports: Map<string, string>
 }
 

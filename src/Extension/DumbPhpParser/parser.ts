@@ -15,14 +15,14 @@ import { parseDocBlockString } from './docBlockParser'
 const NS_REGEX = /namespace\s+([^;]+);/
 
 const USE_IMPORT_REGEX = /^use\s+(?<import>[^\s]+);/m
-const CLASS_REGEX = /class\s+(?<name>[^\s]+)(\s+extends\s+(?<parent>[^\s]+)?)?\s*/
+const CLASS_REGEX = /[\s]class\s+(?<name>[^\s]+)(\s+extends\s+(?<parent>[^\s]+)?)?\s*/
 const FUNCTION_REGEX =
 	/(?<docblock>\/\*\*.*?\*\/\s+)?(?<flags>(?:[a-z]+\s+)*)function\s+(?<name>[^\s]+)\s*\(/
 
 // This regex takes the possibility of return type being unspecified in account,
 // this way it will stop where we want and will not try to find matches for
 // another sections of the string containing source code of PHP class.
-const RETURN_TYPE_REGEX = /\)\s*(:\s*(?<returnType>[^\s]+)\s*)?\{/
+const RETURN_TYPE_REGEX = /\)\s*(:\s*(?<returnType>[^\{]+))?\s*\{/
 
 /**
  * Prepare a mapping of fully-qualified class names to their base name.
@@ -85,6 +85,7 @@ function detectImports(source: string): string[] {
 }
 
 function extractMethods(
+	classUri: string | null,
 	source: string | null,
 	startOffset: number,
 	parsingContext: ParsingContext,
@@ -121,7 +122,10 @@ function extractMethods(
 
 		const methodDef = {
 			name: methodName,
-			offset: startOffset + where, // Add the length of string "function ".,
+			location: {
+				uri: classUri,
+				offset: startOffset + where, // Add the length of string "function ".,
+			},
 			flags: extractMethodFlags(flags),
 			returnType: parsePhpTypeRaw(returnType, parsingContext),
 		} as PhpMethodInfo
@@ -160,6 +164,7 @@ function extractClasses(
 			parentFqn: parentFqn,
 			namespace: parsingContext.namespace,
 			methods: extractMethods(
+				parsingContext.uri,
 				classBody?.content || null,
 				classBody?.offset || 0,
 				parsingContext,
@@ -189,7 +194,7 @@ export async function parsePhpSource(
 
 	const parsingContext: ParsingContext = {
 		namespace: ns,
-		uri: uri,
+		uri: uri?.toString() ?? null,
 		imports: prepareImportMapping(imports),
 	}
 

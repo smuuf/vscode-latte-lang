@@ -76,41 +76,39 @@ class VariableNameHoverProvider {
 			position,
 		)
 
-		if (!varInfo) {
-			varInfo = {
-				name: varName,
-				type: parsePhpType('unknown'),
-				exprType: null,
-				definedAt: null,
+		const md = new vscode.MarkdownString()
+		let typeNameText = '_unknown_'
+
+		if (varInfo) {
+			const typeRepr = getPhpTypeRepr(varInfo.type)
+			const classInfo =
+				this.extCore.phpWorkspaceInfoProvider.getPhpClassInfo(typeRepr)
+
+			if (classInfo && classInfo.location?.uri) {
+				const typeName = varInfo ? getPhpTypeRepr(varInfo.type) : `_unknown_`
+
+				const classPosition: vscode.Position = await getPositionAtOffset(
+					classInfo.location.offset,
+					classInfo.location.uri,
+				)
+				const classUri = vscode.Uri.parse(classInfo.location.uri).with({
+					fragment: `L${classPosition.line + 1},${classPosition.character + 1}`,
+				})
+
+				typeNameText = buildCommandMarkdownLink({
+					title: typeName,
+					tooltip: 'Open file',
+					command: 'vscode.open',
+					args: [classUri],
+				})
+
+				md.isTrusted = true
+			} else {
+				typeNameText = `\`${typeRepr}\``
 			}
 		}
 
-		const md = new vscode.MarkdownString()
-		let typeRepr = getPhpTypeRepr(varInfo.type)
-
-		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(typeRepr)
-		if (classInfo && classInfo.location?.uri) {
-			const classPosition: vscode.Position = await getPositionAtOffset(
-				classInfo.location.offset,
-				classInfo.location.uri,
-			)
-			const classUri = classInfo.location.uri.with({
-				fragment: `L${classPosition.line + 1},${classPosition.character + 1}`,
-			})
-
-			typeRepr = buildCommandMarkdownLink({
-				title: typeRepr,
-				tooltip: 'Open file',
-				command: 'vscode.open',
-				args: [classUri],
-			})
-
-			md.isTrusted = true
-		} else {
-			typeRepr = `\`${typeRepr}\``
-		}
-
-		md.appendMarkdown(`_variable_ \`${varInfo.name}\`\n\n_type_ ${typeRepr}`)
+		md.appendMarkdown(`_variable_ \`${varName}\`\n\n_type_ ${typeNameText}`)
 
 		return new vscode.Hover(md)
 	}
@@ -156,14 +154,11 @@ class MethodCallHoverProvider {
 			return null
 		}
 
-		let className = getPhpTypeRepr(subjectVarInfo.type)
-		const classInfo = this.extCore.phpWorkspaceInfoProvider.getClassInfo(className)
-		if (!classInfo || !classInfo.location) {
-			return null
-		}
-
-		const methodInfo = classInfo.methods.get(methodName)
-		if (!methodInfo || !methodInfo.offset) {
+		const className = getPhpTypeRepr(subjectVarInfo.type)
+		const methodInfo = this.extCore.phpWorkspaceInfoProvider
+			.getPhpClass(className)
+			?.getMethod(methodName)
+		if (!methodInfo || !methodInfo.location) {
 			return null
 		}
 
@@ -172,10 +167,10 @@ class MethodCallHoverProvider {
 		const baseClassName = getClassBaseName(className)
 
 		const methodPosition: vscode.Position = await getPositionAtOffset(
-			methodInfo.offset,
-			classInfo.location.uri,
+			methodInfo.location.offset,
+			methodInfo.location.uri,
 		)
-		const methodUri = classInfo.location.uri.with({
+		const methodUri = vscode.Uri.parse(methodInfo.location.uri).with({
 			fragment: `L${methodPosition.line + 1},${methodPosition.character + 1}`,
 		})
 

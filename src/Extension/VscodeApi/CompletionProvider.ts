@@ -147,15 +147,13 @@ class MethodCallCompletionProvider {
 		}
 
 		let subjectType = getPhpTypeRepr(subjectVar.type)
-		const subjectClass =
-			this.extCore.phpWorkspaceInfoProvider.getClassInfo(subjectType)
+		const availableMethods = this.extCore.phpWorkspaceInfoProvider
+			.getPhpClass(subjectType)
+			?.getPublicMethods()
 
-		if (!subjectClass || !subjectClass.location) {
+		if (!availableMethods) {
 			return null
 		}
-
-		const availableMethods =
-			this.extCore.phpWorkspaceInfoProvider.getPublicMethodsOfClass(subjectClass)
 
 		// Create a list of completion items from public methods present in
 		// the class (or its parent classes) of the type of the variable.

@@ -24,7 +24,10 @@ test('Detect classes: Basic', async () => {
 					'__construct',
 					{
 						name: '__construct',
-						offset: str.indexOf('__construct'),
+						location: {
+							uri: null,
+							offset: str.indexOf('__construct'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: false,
@@ -36,7 +39,10 @@ test('Detect classes: Basic', async () => {
 					'someClass_method_1_public',
 					{
 						name: 'someClass_method_1_public',
-						offset: str.indexOf('someClass_method_1_public'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someClass_method_1_public'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: false,
@@ -48,7 +54,10 @@ test('Detect classes: Basic', async () => {
 					'someClass_method_2_public',
 					{
 						name: 'someClass_method_2_public',
-						offset: str.indexOf('someClass_method_2_public'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someClass_method_2_public'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: false,
@@ -60,7 +69,10 @@ test('Detect classes: Basic', async () => {
 					'someClass_method_3_public_static',
 					{
 						name: 'someClass_method_3_public_static',
-						offset: str.indexOf('someClass_method_3_public_static'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someClass_method_3_public_static'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: true,
@@ -72,7 +84,10 @@ test('Detect classes: Basic', async () => {
 					'someClass_method_4_private',
 					{
 						name: 'someClass_method_4_private',
-						offset: str.indexOf('someClass_method_4_private'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someClass_method_4_private'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PRIVATE,
 							static: false,
@@ -84,7 +99,10 @@ test('Detect classes: Basic', async () => {
 					'someClass_method_5_protected',
 					{
 						name: 'someClass_method_5_protected',
-						offset: str.indexOf('someClass_method_5_protected'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someClass_method_5_protected'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PROTECTED,
 							static: false,
@@ -120,7 +138,10 @@ test('Detect classes: Subclass', async () => {
 					'someSubClass_method_1_public',
 					{
 						name: 'someSubClass_method_1_public',
-						offset: str.indexOf('someSubClass_method_1_public'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someSubClass_method_1_public'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: false,
@@ -132,7 +153,10 @@ test('Detect classes: Subclass', async () => {
 					'someSubClass_method_2_public',
 					{
 						name: 'someSubClass_method_2_public',
-						offset: str.indexOf('someSubClass_method_2_public'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someSubClass_method_2_public'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: false,
@@ -144,7 +168,10 @@ test('Detect classes: Subclass', async () => {
 					'someSubClass_method_3_public_static',
 					{
 						name: 'someSubClass_method_3_public_static',
-						offset: str.indexOf('someSubClass_method_3_public_static'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someSubClass_method_3_public_static'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: true,
@@ -156,7 +183,10 @@ test('Detect classes: Subclass', async () => {
 					'someSubClass_method_4_private',
 					{
 						name: 'someSubClass_method_4_private',
-						offset: str.indexOf('someSubClass_method_4_private'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someSubClass_method_4_private'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PRIVATE,
 							static: false,
@@ -168,7 +198,10 @@ test('Detect classes: Subclass', async () => {
 					'someSubClass_method_5_protected',
 					{
 						name: 'someSubClass_method_5_protected',
-						offset: str.indexOf('someSubClass_method_5_protected'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someSubClass_method_5_protected'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PROTECTED,
 							static: false,
@@ -204,7 +237,10 @@ test('Detect classes: Subclass', async () => {
 					'someSubSubClass_method_1_public',
 					{
 						name: 'someSubSubClass_method_1_public',
-						offset: str.indexOf('someSubSubClass_method_1_public'),
+						location: {
+							uri: null,
+							offset: str.indexOf('someSubSubClass_method_1_public'),
+						},
 						flags: {
 							visibility: SymbolVisibility.PUBLIC,
 							static: false,
