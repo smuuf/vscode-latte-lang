@@ -3,8 +3,6 @@ import config from '../../config'
 import { lruCache } from './lruCache'
 import { isInstanceOf, isString, narrowType } from './common'
 
-export { debugMessage, _getPositionAtOffset as getPositionAtOffset }
-
 export function statusBarMessage(msg: string, prefix: string = ''): vscode.Disposable {
 	msg = `${prefix ? prefix + ' ' : ''}[Latte] ${msg}`
 	return vscode.window.setStatusBarMessage(msg, 30_000)
@@ -41,7 +39,7 @@ export function buildCommandMarkdownLink(options: {
 	return `[\`${title}\`](${commandUriStr} "${tooltip}")`
 }
 
-const debugMessage = config.debugging
+export const debugMessage = config.debugging
 	? (msg: string): vscode.Disposable => vscode.window.setStatusBarMessage(msg, 5_000)
 	: () => ({ dispose: () => {} }) // Fake disposable.
 
@@ -72,3 +70,31 @@ async function getPositionAtOffset(
 }
 
 const _getPositionAtOffset = lruCache(getPositionAtOffset, 600)
+export { _getPositionAtOffset as getPositionAtOffset }
+
+async function getOffsetAtPosition(
+	position: vscode.Position,
+	doc: TextDoc | vscode.Uri | string,
+): Promise<integer> {
+	if (isTextDocument(doc)) {
+		return doc.offsetAt(position)
+	} else if (isString(doc)) {
+		narrowType<string>(doc)
+		doc = vscode.Uri.parse(doc)
+	}
+
+	const openedDoc: TextDoc = await vscode.workspace
+		// Can also be a string (the function supports strings, too), but
+		// because of TypeScript we just cast it to Uri. Whatever.
+		.openTextDocument(doc as vscode.Uri)
+
+	return openedDoc.offsetAt(position)
+}
+
+const _getOffsetAtPosition = lruCache(getOffsetAtPosition, 600)
+export { _getOffsetAtPosition as getOffsetAtPosition }
+
+export const ZeroVoidRange = new vscode.Range(
+	new vscode.Position(0, 0),
+	new vscode.Position(0, 0),
+)

@@ -33,3 +33,10 @@ function createTags(dumbTags: DumbTag[], parsingContext: ParsingContext): Abstra
 
 	return result
 }
+
+// function gatherPoisFromTags(tags: AbstractTag[]): AbstractPoi[] {
+// 	return tags.reduce<AbstractPoi[]>((result, v) => {
+// 		result.push(...v.getPois())
+// 		return result
+// 	}, [])
+// }

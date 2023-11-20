@@ -5,16 +5,20 @@ import ForeachTag from './ForeachTag'
 import IncludeTag from './IncludeTag'
 import VarTag from './VarTag'
 import VarTypeTag from './VarTypeTag'
+import LayoutTag from './LayoutTag'
+import ExtendsTag from './ExtendsTag'
 
 // NOTE: 'unknown' to avoid (I think nonsensical) "Type 'typeof VarTag' is
 // not assignable to type 'typeof AbstractTag'." error, which I don't know
 // how to handle better.
-const KNOWN_TAG_TYPES: AbstractTag[] = [
+const KNOWN_TAG_TYPES: (unknown | typeof AbstractTag)[] = [
 	VarTag,
 	VarTypeTag,
 	DefaultTag,
 	ForeachTag,
 	IncludeTag,
+	LayoutTag,
+	ExtendsTag,
 ]
 
 export function createFromDumbTag(

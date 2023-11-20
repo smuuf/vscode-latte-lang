@@ -1,5 +1,4 @@
 import * as vscode from 'vscode'
-
 import { ExtensionCore } from './Extension/ExtensionCore'
 
 let extCore: ExtensionCore | null

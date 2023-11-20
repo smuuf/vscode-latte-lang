@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 import { CLASS_NAME_REGEX, METHOD_CALL_REGEX, VARIABLE_REGEX } from '../regexes'
 import { ExtensionCore } from '../ExtensionCore'
-import { getPositionAtOffset } from '../utils/common.vscode'
+import { getOffsetAtPosition, getPositionAtOffset } from '../utils/common.vscode'
 import { normalizeTypeName } from '../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../phpTypeParser/utils'
+import { AbstractPoi, GotoDefinitionPoi, PoiType } from '../DumbLatteParser/poiTypes'
 
 interface GotoDefinitionProvider {
 	resolve: (
@@ -23,6 +24,7 @@ export class GotoDefinitionProviderAggregator {
 		this.providers = new Map<string, GotoDefinitionProvider>()
 
 		// Order is important!
+		this.addProvider('pois', new PoiGotoDefinitionProvider(extCore))
 		this.addProvider('variable', new VariableNameGotoDefinitionProvider(extCore))
 		this.addProvider('methodCall', new MethodCallGotoDefinitionProvider(extCore))
 		this.addProvider('class', new ClassGotoDefinitionProvider(extCore))
@@ -56,14 +58,38 @@ export class GotoDefinitionProviderAggregator {
 }
 
 /**
+ * Provider hover for relevant POIs.
+ */
+class PoiGotoDefinitionProvider {
+	public constructor(private extCore: ExtensionCore) {}
+
+	public async resolve(
+		doc: TextDoc,
+		position: vscode.Position,
+	): GotoDefinitionProviderReturnValue {
+		const offset = await getOffsetAtPosition(position, doc)
+		const latteFileInfo = await this.extCore.latteFileInfoProvider.getLatteFileInfo(
+			doc,
+		)
+
+		const found = latteFileInfo.pois.search([offset, offset + 1])
+		const foundWantedPois = found.filter(
+			(poi) => poi.type === PoiType.GotoDefinition,
+		) as Array<GotoDefinitionPoi>
+
+		for (const item of foundWantedPois.values()) {
+			return item.contentFn(doc, position, this.extCore)
+		}
+
+		return null
+	}
+}
+
+/**
  * Provider a location of a relevant Latte variable definition in Latte file.
  */
 class VariableNameGotoDefinitionProvider {
-	extCore: ExtensionCore
-
-	public constructor(extCore: ExtensionCore) {
-		this.extCore = extCore
-	}
+	public constructor(private extCore: ExtensionCore) {}
 
 	public async resolve(
 		doc: TextDoc,
@@ -98,11 +124,7 @@ class VariableNameGotoDefinitionProvider {
  * Provider a location of a method definition from its invocation in Latte file.
  */
 class MethodCallGotoDefinitionProvider {
-	extCore: ExtensionCore
-
-	public constructor(extCore: ExtensionCore) {
-		this.extCore = extCore
-	}
+	public constructor(private extCore: ExtensionCore) {}
 
 	public async resolve(
 		doc: TextDoc,
@@ -170,11 +192,7 @@ class MethodCallGotoDefinitionProvider {
  * Provider a location of a class definition from its reference in Latte file.
  */
 class ClassGotoDefinitionProvider {
-	extCore: ExtensionCore
-
-	public constructor(extCore: ExtensionCore) {
-		this.extCore = extCore
-	}
+	public constructor(private extCore: ExtensionCore) {}
 
 	public async resolve(
 		doc: TextDoc,

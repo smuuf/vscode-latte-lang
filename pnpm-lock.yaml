@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+dependencies:
+  '@flatten-js/interval-tree':
+    specifier: ^1.1.1
+    version: 1.1.1
+
 devDependencies:
   '@types/jest':
     specifier: ^29.5.8
@@ -255,6 +260,10 @@ packages:
     requiresBuild: true
     dev: true
     optional: true
+
+  /@flatten-js/interval-tree@1.1.1:
+    resolution: {integrity: sha512-IsD8MPvzlbrUZnqychSEPM0dX6DXFG6ObFVbJs8asb5cwUOCek+Qi10W/mK7N9aqKkNpOSSzEIkrhHOiOXZlXw==}
+    dev: false
 
   /@jest/expect-utils@29.7.0:
     resolution: {integrity: sha512-GlsNBWiFQFCVi9QVSx7f5AgMeLxe9YCCs5PuP2O2LdjDAA8Jh9eX7lA1Jq/xdXw3Wb3hyvlFNfZIfcRetSzYcA==}

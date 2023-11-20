@@ -1,5 +1,5 @@
-import * as vscode from 'vscode'
 import DumbTag from './Scanner/DumbTag'
+import { AbstractPoi } from './poiTypes'
 
 export interface Range {
 	startOffset: integer
@@ -15,8 +15,17 @@ export abstract class AbstractTag {
 		parsingContext: ParsingContext,
 	) => AbstractTag | null
 	static new: (...args: any) => typeof AbstractTag
+
+	getPois(): AbstractPoi[] {
+		return []
+	}
 }
 
 export type ParsingContext = {
 	filePath: string | null
+}
+
+export type LatteFileStaticAnalysisResult = {
+	tags: AbstractTag[]
+	pois: AbstractPoi[] // POIs - points of interest.
 }

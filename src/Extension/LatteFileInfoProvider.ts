@@ -12,6 +12,8 @@ import IncludeTag from './DumbLatteParser/Tags/IncludeTag'
 import { ExtensionCore } from './ExtensionCore'
 import { LANG_ID_LATTE } from '../constants'
 import { PhpTypeFromExpression } from './phpTypeParser/PhpTypeFromExpression'
+import { AbstractPoi } from './DumbLatteParser/poiTypes'
+import IntervalTree from '@flatten-js/interval-tree'
 
 export type VariableInfo = {
 	name: string
@@ -25,6 +27,7 @@ type VariableDefinitions = Map<variableName, VariableInfo[]>
 export type LatteFileInfo = {
 	externalReferences: Set<string>
 	variables: VariableDefinitions
+	pois: IntervalTree<AbstractPoi>
 }
 
 export class LatteFileInfoProvider {
@@ -45,6 +48,10 @@ export class LatteFileInfoProvider {
 		this.latteTagsProcessor = new LatteTagsProcessor(extCore)
 	}
 
+	public async getLatteFileInfo(doc: TextDocument): Promise<LatteFileInfo> {
+		return this.cache.get(doc) || (await this.rescanFile(doc))
+	}
+
 	public async forgetLatteFileInfo(doc: TextDocument): VoidPromise {
 		this.cache.delete(doc)
 	}
@@ -56,12 +63,13 @@ export class LatteFileInfoProvider {
 		const latteFileInfo: LatteFileInfo = {
 			externalReferences: new Set(),
 			variables: new Map<variableName, VariableInfo[]>(),
+			pois: new IntervalTree(),
 		}
 
 		// We immediately store the latte file info object into cache, so that
 		// any methods in this LatteFileInfoProvider called during scanning,
 		// which need this cache entry to exist, will not trigger another
-		// rescan, which would result in a rescan-lopp.
+		// rescan, which would result in a rescan-loop.
 		this.cache.set(doc, latteFileInfo)
 
 		await this.latteTagsProcessor.scan(doc, latteFileInfo)
@@ -72,9 +80,9 @@ export class LatteFileInfoProvider {
 		doc: TextDocument,
 		position: vscode.Position | null,
 	): Promise<VariableDefinitions | null> {
-		const docInfo = this.cache.get(doc) || (await this.rescanFile(doc))
-
+		const docInfo = await this.getLatteFileInfo(doc)
 		let vars = docInfo.variables
+
 		if (!position) {
 			return vars
 		}
@@ -83,16 +91,13 @@ export class LatteFileInfoProvider {
 		// definitions of a specific variable throughout the document) in this
 		// document and return only definitions of those that are known
 		// (defined) before the specified position.
-		return filterMap(
-			vars,
-			(varName: variableName, varInfos: VariableInfo[]): boolean => {
-				return varInfos.some((varInfo: VariableInfo) => {
-					return varInfo.definedAt
-						? position.isAfterOrEqual(varInfo.definedAt)
-						: false
-				})
-			},
-		)
+		return filterMap(vars, (_, varInfos: VariableInfo[]): boolean => {
+			return varInfos.some((varInfo: VariableInfo) => {
+				return varInfo.definedAt
+					? position.isAfterOrEqual(varInfo.definedAt)
+					: false
+			})
+		})
 	}
 
 	public async getVariableInfo(
@@ -100,8 +105,7 @@ export class LatteFileInfoProvider {
 		varName: variableName,
 		position: vscode.Position,
 	): Promise<VariableInfo | null> {
-		const docInfo = this.cache.get(doc) || (await this.rescanFile(doc))
-
+		const docInfo = await this.getLatteFileInfo(doc)
 		const varInfo = LatteFileInfoProvider.findVariableInfo(
 			docInfo.variables,
 			varName,
@@ -155,9 +159,13 @@ export class LatteTagsProcessor {
 
 	public async scan(doc: TextDocument, latteFileInfo: LatteFileInfo): VoidPromise {
 		const msg = debugMessage('Scanning Latte document')
-		const parsed = parseLatte(doc.getText())
+		const parsed = parseLatte(doc.getText(), doc.uri.path)
 
 		for (const tag of parsed) {
+			for (const poi of tag.getPois()) {
+				latteFileInfo.pois.insert(poi.range, poi)
+			}
+
 			if (isInstanceOf(tag, VarTag, VarTypeTag, DefaultTag)) {
 				narrowType<VarTag | VarTypeTag | DefaultTag>(tag)
 				await this.processVariableTags(latteFileInfo.variables, tag, doc)

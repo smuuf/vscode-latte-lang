@@ -8,13 +8,12 @@ import { ExtensionCore } from '../../ExtensionCore'
 import { getPositionAtOffset, ZeroVoidRange } from '../../utils/common.vscode'
 
 /**
- * Reference: https://github.com/nette/latte/blob/794f252da7437499e467766d633eed85e1a437b7/src/Latte/Essential/CoreExtension.php#L211
- *
- * {include [file] "file" [with blocks] [,] [params]}
- * {include [block] name [,] [params]}
+ * {layout "file"}
  */
-export default class IncludeTag extends AbstractTag {
-	public static readonly DUMB_NAME = 'include'
+export default class LayoutTag extends AbstractTag {
+	// Not readonly, because ExtendsTag extends this class and needs to specify
+	// another dumb name.
+	public static DUMB_NAME = 'layout'
 
 	constructor(
 		readonly relativePath: string,
@@ -27,26 +26,13 @@ export default class IncludeTag extends AbstractTag {
 	static fromDumbTag(
 		dumbTag: DumbTag,
 		parsingContext: ParsingContext,
-	): IncludeTag | null {
+	): LayoutTag | null {
 		const args = dumbTag.args
 
 		const ap = new ArgsParser(args)
-		const type = ap.consumeAnyOfWords('file', 'block')
-		if (type && type !== 'file') {
-			// We care about files only, if the include type is specifed.
-			return null
-		}
-
 		let originalTargetPathOffset = ap.offset
 		let relativePath = ap.consumeQuotedStringOrWord()
-		if (!relativePath || relativePath[0] === '#') {
-			// We care about files only and "#" represents an explicit block name.
-			return null
-		}
-
-		// If Latte would interpret it as a block name, we don't want it.
-		// https://github.com/nette/latte/blob/794f252da7437499e467766d633eed85e1a437b7/src/Latte/Essential/CoreExtension.php#L221
-		if (relativePath.match(/^[\w-]+$/)) {
+		if (!relativePath) {
 			return null
 		}
 
@@ -77,7 +63,7 @@ export default class IncludeTag extends AbstractTag {
 					extCore: ExtensionCore,
 				) => {
 					const includes = this.absolutePath ?? this.relativePath
-					return `_extends_ \`${includes}\``
+					return `_use layout_ \`${includes}\``
 				},
 			} as HoverPoi,
 			{

@@ -1,10 +1,14 @@
 import * as vscode from 'vscode'
 import { METHOD_CALL_REGEX, VARIABLE_REGEX } from '../regexes'
 import { ExtensionCore } from '../ExtensionCore'
-import { parsePhpType } from '../phpTypeParser/phpTypeParser'
 import { getClassBaseName, getPhpTypeRepr } from '../phpTypeParser/utils'
-import { buildCommandMarkdownLink, getPositionAtOffset } from '../utils/common.vscode'
+import {
+	buildCommandMarkdownLink,
+	getOffsetAtPosition,
+	getPositionAtOffset,
+} from '../utils/common.vscode'
 import { ELLIPSIS } from '../../constants'
+import { AbstractPoi, HoverPoi, PoiType } from '../DumbLatteParser/poiTypes'
 
 interface HoverProvider {
 	resolve: (doc: TextDoc, position: vscode.Position) => HoverProviderReturnValue
@@ -19,6 +23,7 @@ export class HoverProviderAggregator {
 		this.providers = new Map<string, HoverProvider>()
 
 		// Order is important!
+		this.addProvider('pois', new PoiHoverProvider(extCore))
 		this.addProvider('variable', new VariableNameHoverProvider(extCore))
 		this.addProvider('methodCall', new MethodCallHoverProvider(extCore))
 	}
@@ -51,14 +56,38 @@ export class HoverProviderAggregator {
 }
 
 /**
+ * Provider hover for relevant POIs.
+ */
+class PoiHoverProvider {
+	public constructor(private extCore: ExtensionCore) {}
+
+	public async resolve(
+		doc: TextDoc,
+		position: vscode.Position,
+	): HoverProviderReturnValue {
+		const offset = await getOffsetAtPosition(position, doc)
+		const latteFileInfo = await this.extCore.latteFileInfoProvider.getLatteFileInfo(
+			doc,
+		)
+
+		const found = latteFileInfo.pois.search([offset, offset + 1])
+		const foundWantedPois = found.filter(
+			(poi) => poi.type === PoiType.Hover,
+		) as Array<HoverPoi>
+
+		for (const item of foundWantedPois.values()) {
+			return new vscode.Hover(await item.contentFn(doc, position, this.extCore))
+		}
+
+		return null
+	}
+}
+
+/**
  * Provider a location of a relevant Latte variable definition in Latte file.
  */
 class VariableNameHoverProvider {
-	extCore: ExtensionCore
-
-	public constructor(extCore: ExtensionCore) {
-		this.extCore = extCore
-	}
+	public constructor(private extCore: ExtensionCore) {}
 
 	public async resolve(
 		doc: TextDoc,
@@ -118,11 +147,7 @@ class VariableNameHoverProvider {
  * Provider a location of a method definition from its invocation in Latte file.
  */
 class MethodCallHoverProvider {
-	extCore: ExtensionCore
-
-	public constructor(extCore: ExtensionCore) {
-		this.extCore = extCore
-	}
+	public constructor(private extCore: ExtensionCore) {}
 
 	public async resolve(
 		doc: TextDoc,
