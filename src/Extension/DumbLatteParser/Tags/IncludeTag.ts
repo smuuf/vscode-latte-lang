@@ -1,11 +1,8 @@
-import * as vscode from 'vscode'
 import path from 'path'
 import DumbTag from '../Scanner/DumbTag'
-import { AbstractTag, ParsingContext, Range } from '../types'
+import { AbstractTag, ParsingContext, Range, TagReferencingTargetFile } from '../types'
 import { ArgsParser } from '../argsParser'
-import { AbstractPoi, GotoDefinitionPoi, HoverPoi, PoiType } from '../poiTypes'
-import { ExtensionCore } from '../../ExtensionCore'
-import { getPositionAtOffset, ZeroVoidRange } from '../../utils/common.vscode'
+import { stripIndentation } from '../../utils/stripIndentation'
 
 /**
  * Reference: https://github.com/nette/latte/blob/794f252da7437499e467766d633eed85e1a437b7/src/Latte/Essential/CoreExtension.php#L211
@@ -13,15 +10,16 @@ import { getPositionAtOffset, ZeroVoidRange } from '../../utils/common.vscode'
  * {include [file] "file" [with blocks] [,] [params]}
  * {include [block] name [,] [params]}
  */
-export default class IncludeTag extends AbstractTag {
-	public static readonly DUMB_NAME = 'include'
+export default class IncludeTag extends AbstractTag implements TagReferencingTargetFile {
+	public static DUMB_NAME = 'include'
 
 	constructor(
+		range: Range,
 		readonly relativePath: string,
 		readonly relativePathOffset: integer,
 		readonly absolutePath: string | null,
 	) {
-		super()
+		super(range)
 	}
 
 	static fromDumbTag(
@@ -57,61 +55,26 @@ export default class IncludeTag extends AbstractTag {
 		}
 
 		return new this(
+			dumbTag.tagRange,
 			relativePath,
 			dumbTag.argsOffset + originalTargetPathOffset,
 			absolutePath,
 		)
 	}
 
-	public getPois(): AbstractPoi[] {
-		return [
-			{
-				type: PoiType.Hover,
-				range: [
-					this.relativePathOffset + 1,
-					this.relativePathOffset + this.relativePath.length + 1,
-				],
-				contentFn: async (
-					doc: TextDoc,
-					position: vscode.Position,
-					extCore: ExtensionCore,
-				) => {
-					const includes = this.absolutePath ?? this.relativePath
-					return `_extends_ \`${includes}\``
-				},
-			} as HoverPoi,
-			{
-				type: PoiType.GotoDefinition,
-				range: [
-					this.relativePathOffset + 1,
-					this.relativePathOffset + this.relativePath.length + 1,
-				],
-				contentFn: async (
-					doc: TextDoc,
-					position: vscode.Position,
-					extCore: ExtensionCore,
-				) => {
-					// Couldn't resolve to final absolute path. No goto
-					// definition.
-					if (!this.absolutePath) {
-						return null
-					}
+	public getDescription(): string {
+		return stripIndentation(`
+		Includes a template file \`${this.absolutePath}\`.
 
-					const locationLink: vscode.LocationLink = {
-						targetUri: vscode.Uri.parse(this.absolutePath),
-						targetRange: ZeroVoidRange,
-						originSelectionRange: new vscode.Range(
-							await getPositionAtOffset(this.relativePathOffset + 1, doc),
-							await getPositionAtOffset(
-								this.relativePathOffset + this.relativePath.length + 1,
-								doc,
-							),
-						),
-					}
 
-					return [locationLink]
-				},
-			} as GotoDefinitionPoi,
-		]
+		Example:
+		\`\`\`latte
+		{include 'file.latte'}
+		{include 'template.latte', foo: 'bar', id: 123}
+		{include 'template.latte' with blocks}
+		\`\`\`
+
+		[Documentation](https://latte.nette.org/en/tags#toc-including-templates)
+		`)
 	}
 }

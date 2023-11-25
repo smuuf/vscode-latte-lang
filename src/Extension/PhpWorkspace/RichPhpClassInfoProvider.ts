@@ -3,7 +3,7 @@ import { PhpClassInfo, PhpMethodInfo, SymbolVisibility } from '../DumbPhpParser/
 export class RichPhpClassInfoProvider {
 	constructor(private classInfoGetter: (classFqn: string) => PhpClassInfo | null) {}
 
-	private getClassHierarchyList(originClass: PhpClassInfo) {
+	private getClassHierarchyList(originClass: PhpClassInfo): PhpClassInfo[] {
 		const result = [originClass]
 
 		// If the class has a parent class, iterate up the class hierarchy and
@@ -22,7 +22,7 @@ export class RichPhpClassInfoProvider {
 
 	/**
 	 * Retrieves `PhpMethodInfo` from a class while taking type hierarchy into
-	 * accounts.
+	 * account.
 	 */
 	public getMethod(name: string, classInfo: PhpClassInfo): PhpMethodInfo | null {
 		const hierarchyList = this.getClassHierarchyList(classInfo)

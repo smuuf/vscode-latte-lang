@@ -1,5 +1,7 @@
 import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
+import { getPhpTypeRepr } from '../../phpTypeParser/utils'
 import { stringAfterFirstNeedle } from '../../utils/common'
+import { stripIndentation } from '../../utils/stripIndentation'
 import { isValidTypeSpec, isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
 import { Range, AbstractTag, ParsingContext } from '../types'
@@ -12,13 +14,13 @@ export default class DefaultTag extends AbstractTag {
 	public static readonly DUMB_NAME = 'default'
 
 	constructor(
+		range: Range,
 		readonly varName: string,
-		readonly tagRange: Range,
 		readonly varType: PhpType | null,
 		readonly expression: string | null,
 		readonly nameOffset: integer,
 	) {
-		super()
+		super(range)
 	}
 
 	static fromDumbTag(
@@ -36,8 +38,8 @@ export default class DefaultTag extends AbstractTag {
 		// Just a variable name without a specified type.
 		if (isValidVariableName(argsParts[0])) {
 			return new this(
-				argsParts[0],
 				dumbTag.tagRange,
+				argsParts[0],
 				null,
 				// Extract the expression after "=".
 				stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
@@ -58,12 +60,26 @@ export default class DefaultTag extends AbstractTag {
 		}
 
 		return new this(
-			argsParts[1],
 			dumbTag.tagRange,
+			argsParts[1],
 			parsePhpType(argsParts[0])!,
 			// Extract the expression after "=".
 			stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
 			dumbTag.argsOffset + nameOffset,
 		)
+	}
+
+	public getDescription(): string {
+		const typeRepr = getPhpTypeRepr(this.varType)
+
+		return stripIndentation(`
+		If not yet defined, this tag defines a new variable \`${this.varName}\` of type \`${typeRepr}\`
+
+		Example:
+		\`\`\`latte
+		{default SomeType $someVariable = ...}
+		{default $someVariable = ...}
+		\`\`\`
+		`)
 	}
 }

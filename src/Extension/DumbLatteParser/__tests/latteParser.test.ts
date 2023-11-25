@@ -11,50 +11,50 @@ test('Test parser', () => {
 
 	const expected = [
 		new VarTag(
-			'$prvni',
 			{
 				startOffset: 0,
 				endOffset: 11,
 			},
+			'$prvni',
 			null,
 			null,
 			5,
 		),
 		new VarTag(
-			'$druhy',
 			{
 				startOffset: 13,
 				endOffset: 29,
 			},
+			'$druhy',
 			parsePhpType('bool'),
 			null,
 			23,
 		),
 		new VarTypeTag(
-			'$treti',
 			{
 				startOffset: 30,
 				endOffset: 66,
 			},
+			'$treti',
 			parsePhpType('\\MyNamespace\\MyClass'),
 			60,
 		),
 		new DefaultTag(
-			'$ctvrty',
 			{
 				startOffset: 101,
 				endOffset: 121,
 			},
+			'$ctvrty',
 			null,
 			'4',
 			110,
 		),
 		new DefaultTag(
-			'$paty',
 			{
 				startOffset: 122,
 				endOffset: 150,
 			},
+			'$paty',
 			parsePhpType('int|float'),
 			'5',
 			141,
@@ -76,11 +76,11 @@ test('Test parser', () => {
 			'$osmy',
 		),
 		new VarTypeTag(
-			'$devaty',
 			{
 				startOffset: 278,
 				endOffset: 314,
 			},
+			'$devaty',
 			parsePhpType('MyNamespace\\MyClass'),
 			307,
 		),

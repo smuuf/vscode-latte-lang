@@ -12,8 +12,10 @@ import IncludeTag from './DumbLatteParser/Tags/IncludeTag'
 import { ExtensionCore } from './ExtensionCore'
 import { LANG_ID_LATTE } from '../constants'
 import { PhpTypeFromExpression } from './phpTypeParser/PhpTypeFromExpression'
-import { AbstractPoi } from './DumbLatteParser/poiTypes'
 import IntervalTree from '@flatten-js/interval-tree'
+import { injectPoisIntoDumbTag } from './LattePois/poiInjector'
+import { AbstractTag } from './DumbLatteParser/types'
+import { AbstractPoi } from './LattePois/poiTypes'
 
 export type VariableInfo = {
 	name: string
@@ -162,7 +164,8 @@ export class LatteTagsProcessor {
 		const parsed = parseLatte(doc.getText(), doc.uri.path)
 
 		for (const tag of parsed) {
-			for (const poi of tag.getPois()) {
+			injectPoisIntoDumbTag(tag)
+			for (const poi of tag.pois) {
 				latteFileInfo.pois.insert(poi.range, poi)
 			}
 
@@ -217,7 +220,7 @@ export class LatteTagsProcessor {
 	): VoidPromise {
 		const varName = tag.iteratesAsVarName
 		const iterableVarName = tag.iteratesVarName
-		const position = await getPositionAtOffset(tag.tagRange.startOffset, doc)
+		const position = await getPositionAtOffset(tag.range.startOffset, doc)
 
 		const iterableVarInfo = LatteFileInfoProvider.findVariableInfo(
 			varDefs,

@@ -1,3 +1,4 @@
+import { stripIndentation } from '../../utils/stripIndentation'
 import { isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
 import { Range, AbstractTag, ParsingContext } from '../types'
@@ -6,11 +7,11 @@ export default class ForeachTag extends AbstractTag {
 	public static readonly DUMB_NAME = 'foreach'
 
 	constructor(
-		readonly tagRange: Range,
+		range: Range,
 		readonly iteratesVarName: string,
 		readonly iteratesAsVarName: string,
 	) {
-		super()
+		super(range)
 	}
 
 	static fromDumbTag(
@@ -41,5 +42,20 @@ export default class ForeachTag extends AbstractTag {
 		}
 
 		return new this(dumbTag.tagRange, iteratesVarName, iteratesAsVarName)
+	}
+
+	public getDescription(): string {
+		return stripIndentation(`
+		Foreach loop iterating over variable \`${this.iteratesVarName}\`.
+
+		Example:
+		\`\`\`latte
+		{foreach $langs as $code => $lang}
+			<span>{$lang}</span>
+		{/foreach}
+		\`\`\`
+
+		[Documentation](https://latte.nette.org/en/tags#toc-foreach)
+		`)
 	}
 }

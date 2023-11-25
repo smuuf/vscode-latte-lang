@@ -1,4 +1,6 @@
 import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
+import { getPhpTypeRepr } from '../../phpTypeParser/utils'
+import { stripIndentation } from '../../utils/stripIndentation'
 import { isValidTypeSpec, isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
 import { Range, AbstractTag, ParsingContext } from '../types'
@@ -11,12 +13,12 @@ export default class VarTypeTag extends AbstractTag {
 	readonly expression = null
 
 	constructor(
+		range: Range,
 		readonly varName: string,
-		readonly tagRange: Range,
 		readonly varType: PhpType | null,
 		readonly nameOffset: integer,
 	) {
-		super()
+		super(range)
 	}
 
 	static fromDumbTag(
@@ -49,10 +51,26 @@ export default class VarTypeTag extends AbstractTag {
 		}
 
 		return new this(
-			tailParts[1],
 			dumbTag.tagRange,
+			tailParts[1],
 			parsePhpType(tailParts[0])!,
 			dumbTag.argsOffset + nameOffset,
 		)
+	}
+
+	public getDescription(): string {
+		const typeRepr = getPhpTypeRepr(this.varType)
+
+		return stripIndentation(`
+		Declares a type of variable \`${this.varName}\` to be \`${typeRepr}\`.
+
+		Example:
+		\`\`\`latte
+		{varType Nette\Security\User $user}
+		{varType string $lang}
+		\`\`\`
+
+		[Documentation](https://latte.nette.org/en/type-system#toc-vartype)
+		`)
 	}
 }

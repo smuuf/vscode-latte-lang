@@ -77,18 +77,27 @@ export class PhpWorkspaceInfoProvider {
 	}
 
 	private async scanWorkspace(): VoidPromise {
-		let msg: vscode.Disposable | null = statusBarSpinMessage(
+		let msg: vscode.Disposable = statusBarSpinMessage(
 			'Scanning workspace for PHP files',
 		)
 		const phpFilesUris = await vscode.workspace.findFiles(
 			'**/*.php',
-			'**/{node_modules,temp,log}/**',
+			'**/{node_modules,temp,log,.git}/**',
 		)
 		msg.dispose()
 
-		const promises = phpFilesUris.map(async (uri) => this.scanPhpFile(uri))
-		msg = statusBarSpinMessage(`Scanning ${promises.length} PHP files`)
-		await Promise.all(promises)
+		let total = phpFilesUris.length
+		let count = 0
+		do {
+			const urisBatch = phpFilesUris.splice(0, 100)
+			count += urisBatch.length
+
+			const promises = urisBatch.map(async (uri) => this.scanPhpFile(uri))
+			await Promise.all(promises)
+
+			msg.dispose()
+			msg = statusBarSpinMessage(`Scanned ${count} of ${total} PHP files`)
+		} while (phpFilesUris.length)
 		msg.dispose()
 	}
 

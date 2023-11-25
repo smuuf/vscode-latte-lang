@@ -5,7 +5,7 @@ import { isInstanceOf, isString, narrowType } from './common'
 
 export function statusBarMessage(msg: string, prefix: string = ''): vscode.Disposable {
 	msg = `${prefix ? prefix + ' ' : ''}[Latte] ${msg}`
-	return vscode.window.setStatusBarMessage(msg, 30_000)
+	return vscode.window.setStatusBarMessage(msg, 20_000)
 }
 
 export function statusBarSpinMessage(msg: string): vscode.Disposable {

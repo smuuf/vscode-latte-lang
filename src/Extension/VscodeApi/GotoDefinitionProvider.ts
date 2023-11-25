@@ -4,7 +4,7 @@ import { ExtensionCore } from '../ExtensionCore'
 import { getOffsetAtPosition, getPositionAtOffset } from '../utils/common.vscode'
 import { normalizeTypeName } from '../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../phpTypeParser/utils'
-import { AbstractPoi, GotoDefinitionPoi, PoiType } from '../DumbLatteParser/poiTypes'
+import { AbstractPoi, GotoDefinitionPoi, PoiType } from '../LattePois/poiTypes'
 
 interface GotoDefinitionProvider {
 	resolve: (

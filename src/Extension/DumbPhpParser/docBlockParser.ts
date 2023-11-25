@@ -3,6 +3,9 @@ interface DocBlockData {
 	tags: Map<string, string>
 }
 
+/**
+ * Removes doc-block-style "/** ... \n * ... \n * ..." wrapper from string.
+ */
 export function cleanDocBlockString(input: string): string {
 	input = input
 		.trim()

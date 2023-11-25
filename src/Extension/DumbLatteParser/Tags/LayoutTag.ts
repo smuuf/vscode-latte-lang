@@ -1,26 +1,24 @@
-import * as vscode from 'vscode'
 import path from 'path'
 import DumbTag from '../Scanner/DumbTag'
-import { AbstractTag, ParsingContext, Range } from '../types'
+import { AbstractTag, ParsingContext, Range, TagReferencingTargetFile } from '../types'
 import { ArgsParser } from '../argsParser'
-import { AbstractPoi, GotoDefinitionPoi, HoverPoi, PoiType } from '../poiTypes'
-import { ExtensionCore } from '../../ExtensionCore'
-import { getPositionAtOffset, ZeroVoidRange } from '../../utils/common.vscode'
+import { stripIndentation } from '../../utils/stripIndentation'
 
 /**
  * {layout "file"}
  */
-export default class LayoutTag extends AbstractTag {
+export default class LayoutTag extends AbstractTag implements TagReferencingTargetFile {
 	// Not readonly, because ExtendsTag extends this class and needs to specify
 	// another dumb name.
 	public static DUMB_NAME = 'layout'
 
 	constructor(
+		range: Range,
 		readonly relativePath: string,
 		readonly relativePathOffset: integer,
 		readonly absolutePath: string | null,
 	) {
-		super()
+		super(range)
 	}
 
 	static fromDumbTag(
@@ -43,61 +41,23 @@ export default class LayoutTag extends AbstractTag {
 		}
 
 		return new this(
+			dumbTag.tagRange,
 			relativePath,
 			dumbTag.argsOffset + originalTargetPathOffset,
 			absolutePath,
 		)
 	}
 
-	public getPois(): AbstractPoi[] {
-		return [
-			{
-				type: PoiType.Hover,
-				range: [
-					this.relativePathOffset + 1,
-					this.relativePathOffset + this.relativePath.length + 1,
-				],
-				contentFn: async (
-					doc: TextDoc,
-					position: vscode.Position,
-					extCore: ExtensionCore,
-				) => {
-					const includes = this.absolutePath ?? this.relativePath
-					return `_use layout_ \`${includes}\``
-				},
-			} as HoverPoi,
-			{
-				type: PoiType.GotoDefinition,
-				range: [
-					this.relativePathOffset + 1,
-					this.relativePathOffset + this.relativePath.length + 1,
-				],
-				contentFn: async (
-					doc: TextDoc,
-					position: vscode.Position,
-					extCore: ExtensionCore,
-				) => {
-					// Couldn't resolve to final absolute path. No goto
-					// definition.
-					if (!this.absolutePath) {
-						return null
-					}
+	public getDescription(): string {
+		return stripIndentation(`
+		Specifies a layout file \`${this.absolutePath}\` which this template will extend.
 
-					const locationLink: vscode.LocationLink = {
-						targetUri: vscode.Uri.parse(this.absolutePath),
-						targetRange: ZeroVoidRange,
-						originSelectionRange: new vscode.Range(
-							await getPositionAtOffset(this.relativePathOffset + 1, doc),
-							await getPositionAtOffset(
-								this.relativePathOffset + this.relativePath.length + 1,
-								doc,
-							),
-						),
-					}
+		Example:
+		\`\`\`latte
+		{layout 'layout.latte'}
+		\`\`\`
 
-					return [locationLink]
-				},
-			} as GotoDefinitionPoi,
-		]
+		[Documentation](https://latte.nette.org/en/template-inheritance#toc-layout-inheritance)
+		`)
 	}
 }
