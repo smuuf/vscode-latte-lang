@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { LatteFileInfoProvider } from '../LatteFileInfoProvider'
-import { METHOD_CALL_REGEX } from '../regexes'
-import { PhpType } from './phpTypeParser'
+import { METHOD_CALL_REGEX_WHOLE, QUOTED_STRING_REGEX_WHOLE } from '../regexes'
+import { PhpType, parsePhpType } from './phpTypeParser'
 import { getPhpTypeRepr } from './utils'
 import { PhpWorkspaceInfoProvider } from '../PhpWorkspace/PhpWorkspaceInfoProvider'
 
@@ -18,7 +18,13 @@ export class PhpTypeFromExpression {
 			return null
 		}
 
-		const match = this.expr.match(METHOD_CALL_REGEX)
+		let match = null
+		match = this.expr.match(QUOTED_STRING_REGEX_WHOLE)
+		if (match) {
+			return parsePhpType('string')
+		}
+
+		match = this.expr.match(METHOD_CALL_REGEX_WHOLE)
 		if (!match) {
 			return null
 		}

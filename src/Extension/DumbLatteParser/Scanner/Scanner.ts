@@ -3,9 +3,7 @@ import { DumbTagConstructorArgs, RegionType, ScannerState } from './types'
 import Stack from '../../utils/Stack'
 import { isRegionTransferAllowed, isRegionTransferIgnored } from './RegionPolicies'
 import { isString } from '../../utils/common'
-
-const WORD_REGEX = /[a-zA-Z_][a-zA-Z0-9_-]*/
-const QUOTED_STRING_REGEX = /(")(?<s1>(?:\\"|[^"])+)\1|(')(?<s2>(?:\\'|[^'])+)\1/
+import { QUOTED_STRING_REGEX, WORD_REGEX } from '../../regexes'
 
 export class Scanner {
 	private state!: ScannerState
