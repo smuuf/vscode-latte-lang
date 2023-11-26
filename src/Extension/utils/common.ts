@@ -66,7 +66,9 @@ export function matchRegexAtIndex(
 		regex = regex.source
 	}
 
-	regex = new RegExp(regex, 'y') // "y" flag makes the regex match precisely at lastIndex.
+	// "y" flag makes the regex match precisely at lastIndex.
+	// "d" says that we want indices for each match group.
+	regex = new RegExp(regex, 'yd')
 	regex.lastIndex = index
 	return regex.exec(subject)
 }

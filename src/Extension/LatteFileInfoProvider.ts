@@ -4,7 +4,7 @@ import { parseLatte } from './DumbLatteParser/latteParser'
 import DefaultTag from './DumbLatteParser/Tags/DefaultTag'
 import VarTag from './DumbLatteParser/Tags/VarTag'
 import VarTypeTag from './DumbLatteParser/Tags/VarTypeTag'
-import { PhpType } from './phpTypeParser/phpTypeParser'
+import { PhpType, parsePhpType } from './phpTypeParser/phpTypeParser'
 import { filterMap, isInstanceOf, narrowType } from './utils/common'
 import { debugMessage, getPositionAtOffset } from './utils/common.vscode'
 import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
@@ -16,6 +16,7 @@ import IntervalTree from '@flatten-js/interval-tree'
 import { injectPoisIntoDumbTag } from './LattePois/poiInjector'
 import { AbstractTag } from './DumbLatteParser/types'
 import { AbstractPoi } from './LattePois/poiTypes'
+import CaptureTag from './DumbLatteParser/Tags/CaptureTag'
 
 export type VariableInfo = {
 	name: string
@@ -177,9 +178,9 @@ export class LatteTagsProcessor {
 				narrowType<ForeachTag>(tag)
 				await this.processForeachTag(latteFileInfo.variables, tag, doc)
 			}
-			if (isInstanceOf(tag, IncludeTag)) {
-				narrowType<IncludeTag>(tag)
-				await this.processIncludeTag(latteFileInfo.variables, tag, doc)
+			if (isInstanceOf(tag, CaptureTag)) {
+				narrowType<CaptureTag>(tag)
+				await this.processCaptureTag(latteFileInfo.variables, tag, doc)
 			}
 		}
 
@@ -254,15 +255,26 @@ export class LatteTagsProcessor {
 		if (!varDefs.get(varInfo.name)) {
 			varDefs.set(varInfo.name, [])
 		}
-
 		varDefs.get(varInfo.name)?.push(varInfo)
 	}
 
-	private async processIncludeTag(
+	private async processCaptureTag(
 		varDefs: Map<variableName, VariableInfo[]>,
-		tag: IncludeTag,
+		tag: CaptureTag,
 		doc: TextDoc,
 	): VoidPromise {
-		// TODO
+		const position = await getPositionAtOffset(tag.nameOffset, doc)
+
+		const varInfo: VariableInfo = {
+			name: tag.varName,
+			type: parsePhpType('\\Latte\\Runtime\\Html'),
+			exprType: null,
+			definedAt: position,
+		}
+
+		if (!varDefs.get(varInfo.name)) {
+			varDefs.set(varInfo.name, [])
+		}
+		varDefs.get(varInfo.name)?.push(varInfo)
 	}
 }

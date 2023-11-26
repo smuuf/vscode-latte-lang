@@ -8,6 +8,7 @@ import VarTypeTag from './VarTypeTag'
 import LayoutTag from './LayoutTag'
 import ExtendsTag from './ExtendsTag'
 import SandboxTag from './SandboxTag'
+import CaptureTag from './CaptureTag'
 
 // NOTE: 'unknown' to avoid (I think nonsensical) "Type 'typeof VarTag' is
 // not assignable to type 'typeof AbstractTag'." error, which I don't know
@@ -21,6 +22,7 @@ const KNOWN_TAG_TYPES: (unknown | typeof AbstractTag)[] = [
 	LayoutTag,
 	ExtendsTag,
 	SandboxTag,
+	CaptureTag,
 ]
 
 export function createFromDumbTag(
