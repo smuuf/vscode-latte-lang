@@ -18,7 +18,7 @@ export default class DefaultTag extends AbstractTag {
 		readonly varName: string,
 		readonly varType: PhpType | null,
 		readonly expression: string | null,
-		readonly nameOffset: integer,
+		readonly nameRange: Range,
 	) {
 		super(range)
 	}
@@ -43,7 +43,10 @@ export default class DefaultTag extends AbstractTag {
 				null,
 				// Extract the expression after "=".
 				stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
-				dumbTag.argsOffset + nameOffset,
+				{
+					startOffset: dumbTag.argsOffset + nameOffset,
+					endOffset: dumbTag.argsOffset + nameOffset + argsParts[0].length,
+				} as Range,
 			)
 		}
 
@@ -65,7 +68,10 @@ export default class DefaultTag extends AbstractTag {
 			parsePhpType(argsParts[0])!,
 			// Extract the expression after "=".
 			stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
-			dumbTag.argsOffset + nameOffset,
+			{
+				startOffset: dumbTag.argsOffset + nameOffset,
+				endOffset: dumbTag.argsOffset + nameOffset + argsParts[1].length,
+			} as Range,
 		)
 	}
 
@@ -73,7 +79,7 @@ export default class DefaultTag extends AbstractTag {
 		const typeRepr = getPhpTypeRepr(this.varType)
 
 		return stripIndentation(`
-		If not yet defined, this tag defines a new variable \`${this.varName}\` of type \`${typeRepr}\`
+		If not yet defined, this tag defines a new variable \`${this.varName}\` of type \`${typeRepr}\`.
 
 		Example:
 		\`\`\`latte

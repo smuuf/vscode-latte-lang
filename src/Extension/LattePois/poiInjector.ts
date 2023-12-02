@@ -8,11 +8,17 @@ import { ZeroVoidRange, getPositionAtOffset } from '../utils/common.vscode'
 import LayoutTag from '../DumbLatteParser/Tags/LayoutTag'
 import ExtendsTag from '../DumbLatteParser/Tags/ExtendsTag'
 import SandboxTag from '../DumbLatteParser/Tags/SandboxTag'
+import VarTypeTag from '../DumbLatteParser/Tags/VarTypeTag'
+import { getPhpTypeRepr } from '../phpTypeParser/utils'
 
 export function injectPoisIntoDumbTag(tag: AbstractTag): void {
 	tag.pois.push(...buildTagDescriptionPoi(tag))
 
 	switch (true) {
+		case isInstanceOf(tag, VarTypeTag):
+			narrowType<VarTypeTag>(tag)
+			tag.pois.push(...buildVarTypeTagPois(tag))
+			break
 		case isInstanceOf(tag, IncludeTag):
 			narrowType<IncludeTag>(tag)
 			tag.pois.push(...buildReferencedFilePois('include', tag))
@@ -97,6 +103,50 @@ function buildReferencedFilePois(
 							tag.relativePathOffset + tag.relativePath.length + 1,
 							doc,
 						),
+					),
+				}
+
+				return [locationLink]
+			},
+		} as GotoDefinitionPoi,
+	]
+}
+
+function buildVarTypeTagPois(tag: VarTypeTag): AbstractPoi[] {
+	return [
+		{
+			type: PoiType.Hover,
+			range: [tag.typeRange.startOffset, tag.typeRange.endOffset],
+			contentFn: async (
+				doc: TextDoc,
+				position: vscode.Position,
+				extCore: ExtensionCore,
+			) => {
+				const repr = getPhpTypeRepr(tag.varType)
+				return `_type_ \`${repr}\``
+			},
+		} as HoverPoi,
+		{
+			type: PoiType.GotoDefinition,
+			range: [tag.typeRange.startOffset, tag.typeRange.endOffset],
+			contentFn: async (
+				doc: TextDoc,
+				position: vscode.Position,
+				extCore: ExtensionCore,
+			) => {
+				const classInfo = extCore.phpWorkspaceInfoProvider.getPhpClassInfo(
+					tag.varType.repr,
+				)
+				if (!classInfo || !classInfo.location) {
+					return null
+				}
+
+				const locationLink: vscode.LocationLink = {
+					targetUri: vscode.Uri.parse(classInfo.location.uri),
+					targetRange: ZeroVoidRange,
+					originSelectionRange: new vscode.Range(
+						await getPositionAtOffset(tag.typeRange.startOffset, doc),
+						await getPositionAtOffset(tag.typeRange.endOffset, doc),
 					),
 				}
 

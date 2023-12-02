@@ -8,7 +8,7 @@ import {
 	getPositionAtOffset,
 } from '../utils/common.vscode'
 import { ELLIPSIS } from '../../constants'
-import { AbstractPoi, HoverPoi, PoiType } from '../LattePois/poiTypes'
+import { HoverPoi, PoiType } from '../LattePois/poiTypes'
 
 interface HoverProvider {
 	resolve: (doc: TextDoc, position: vscode.Position) => HoverProviderReturnValue

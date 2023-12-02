@@ -18,7 +18,10 @@ test('Test parser', () => {
 			'$prvni',
 			null,
 			null,
-			5,
+			{
+				endOffset: 11,
+				startOffset: 5,
+			},
 		),
 		new VarTag(
 			{
@@ -28,7 +31,10 @@ test('Test parser', () => {
 			'$druhy',
 			parsePhpType('bool'),
 			null,
-			23,
+			{
+				startOffset: 23,
+				endOffset: 29,
+			},
 		),
 		new VarTypeTag(
 			{
@@ -36,8 +42,15 @@ test('Test parser', () => {
 				endOffset: 66,
 			},
 			'$treti',
-			parsePhpType('\\MyNamespace\\MyClass'),
-			60,
+			parsePhpType('\\MyNamespace\\MyClass')!,
+			{
+				startOffset: 60,
+				endOffset: 66,
+			},
+			{
+				startOffset: 39,
+				endOffset: 60,
+			},
 		),
 		new DefaultTag(
 			{
@@ -47,7 +60,10 @@ test('Test parser', () => {
 			'$ctvrty',
 			null,
 			'4',
-			110,
+			{
+				endOffset: 117,
+				startOffset: 110,
+			},
 		),
 		new DefaultTag(
 			{
@@ -57,7 +73,10 @@ test('Test parser', () => {
 			'$paty',
 			parsePhpType('int|float'),
 			'5',
-			141,
+			{
+				endOffset: 146,
+				startOffset: 141,
+			},
 		),
 		new ForeachTag(
 			{
@@ -81,8 +100,15 @@ test('Test parser', () => {
 				endOffset: 314,
 			},
 			'$devaty',
-			parsePhpType('MyNamespace\\MyClass'),
-			307,
+			parsePhpType('MyNamespace\\MyClass')!,
+			{
+				endOffset: 314,
+				startOffset: 307,
+			},
+			{
+				startOffset: 287,
+				endOffset: 307,
+			},
 		),
 	]
 

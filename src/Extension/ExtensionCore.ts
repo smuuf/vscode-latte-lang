@@ -19,6 +19,7 @@ export class ExtensionCore {
 	public gotoDefinitionProvider: GotoDefinitionProviderAggregator
 	public completionProvider: CompletionProviderAggregator
 	public hoverProvider: HoverProviderAggregator
+	public diagnosticCollection: vscode.DiagnosticCollection
 
 	public onExit: (() => void)[] = []
 
@@ -32,6 +33,7 @@ export class ExtensionCore {
 		this.gotoDefinitionProvider = new GotoDefinitionProviderAggregator(this)
 		this.completionProvider = new CompletionProviderAggregator(this)
 		this.hoverProvider = new HoverProviderAggregator(this)
+		this.diagnosticCollection = vscode.languages.createDiagnosticCollection(LANG_ID)
 	}
 
 	public registerDisposables(): void {
@@ -50,6 +52,7 @@ export class ExtensionCore {
 				'$', // For variable name autocompletion.
 				'>', // For $object->methodName() completion.
 			),
+			this.diagnosticCollection,
 		]
 
 		const documentEvents = [

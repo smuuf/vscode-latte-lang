@@ -8,13 +8,11 @@ import { PhpType, parsePhpType } from './phpTypeParser/phpTypeParser'
 import { filterMap, isInstanceOf, narrowType } from './utils/common'
 import { debugMessage, getPositionAtOffset } from './utils/common.vscode'
 import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
-import IncludeTag from './DumbLatteParser/Tags/IncludeTag'
 import { ExtensionCore } from './ExtensionCore'
 import { LANG_ID_LATTE } from '../constants'
-import { PhpTypeFromExpression } from './phpTypeParser/PhpTypeFromExpression'
+import { PhpTypeFromExpression } from './PhpWorkspace/PhpTypeFromExpression'
 import IntervalTree from '@flatten-js/interval-tree'
 import { injectPoisIntoDumbTag } from './LattePois/poiInjector'
-import { AbstractTag } from './DumbLatteParser/types'
 import { AbstractPoi } from './LattePois/poiTypes'
 import CaptureTag from './DumbLatteParser/Tags/CaptureTag'
 
@@ -196,7 +194,7 @@ export class LatteTagsProcessor {
 			name: tag.varName,
 			type: tag.varType,
 			exprType: new PhpTypeFromExpression(tag.expression),
-			definedAt: await getPositionAtOffset(tag.nameOffset, doc),
+			definedAt: await getPositionAtOffset(tag.nameRange.startOffset, doc),
 		}
 
 		// We're interested in gathering types, so don't overwrite

@@ -1,6 +1,8 @@
 import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../../phpTypeParser/utils'
+import { VARIABLE_REGEX } from '../../regexes'
 import { stripIndentation } from '../../utils/stripIndentation'
+import { ArgsParser } from '../argsParser'
 import { isValidTypeSpec, isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
 import { Range, AbstractTag, ParsingContext } from '../types'
@@ -15,8 +17,9 @@ export default class VarTypeTag extends AbstractTag {
 	constructor(
 		range: Range,
 		readonly varName: string,
-		readonly varType: PhpType | null,
-		readonly nameOffset: integer,
+		readonly varType: PhpType,
+		readonly nameRange: Range,
+		readonly typeRange: Range,
 	) {
 		super(range)
 	}
@@ -25,36 +28,44 @@ export default class VarTypeTag extends AbstractTag {
 		dumbTag: DumbTag,
 		parsingContext: ParsingContext,
 	): VarTypeTag | null {
-		const tailParts = dumbTag.args.split(/\s+/, 10) // Generous limit.
-		const nameOffset = dumbTag.args.indexOf('$')
+		const ap = new ArgsParser(dumbTag.args)
 
-		// Doesn't contain a variable name.
-		if (nameOffset === -1) {
+		const typeMatch = ap.consumeRegex(/.*(?=\$)/) // Everything before the first $ or nothing.
+		if (!typeMatch) {
 			return null
 		}
 
-		// Invalid {varType ...} structure - has too many arguments.
-		if (tailParts.length !== 2) {
+		const typeStr = typeMatch[0]
+		const typeOffset = typeMatch.indices![0][0]
+		if (!isValidTypeSpec(typeStr)) {
+			// Missing or invalid type specification.
 			return null
 		}
 
-		// Invalid {var ...} structure - doesn't have a $variableName as
-		// the second word.
-		if (!isValidTypeSpec(tailParts[0])) {
+		const varMatch = ap.consumeRegex(VARIABLE_REGEX)
+		if (!varMatch) {
 			return null
 		}
 
-		// Invalid {var ...} structure - doesn't have a $variableName as
-		// the second arg.
-		if (!isValidVariableName(tailParts[1])) {
+		const varName = varMatch[0]
+		const varNameOffset = varMatch.indices![0][0]
+		if (!isValidVariableName(varName)) {
+			// Missing or invalid variable name specification.
 			return null
 		}
 
 		return new this(
 			dumbTag.tagRange,
-			tailParts[1],
-			parsePhpType(tailParts[0])!,
-			dumbTag.argsOffset + nameOffset,
+			varName,
+			parsePhpType(typeStr)!,
+			{
+				startOffset: dumbTag.argsOffset + varNameOffset,
+				endOffset: dumbTag.argsOffset + varNameOffset + varName.length,
+			} as Range,
+			{
+				startOffset: dumbTag.argsOffset + typeOffset,
+				endOffset: dumbTag.argsOffset + typeOffset + typeStr.length,
+			} as Range,
 		)
 	}
 

@@ -1,7 +1,9 @@
 import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../../phpTypeParser/utils'
+import { VARIABLE_REGEX } from '../../regexes'
 import { stringAfterFirstNeedle } from '../../utils/common'
 import { stripIndentation } from '../../utils/stripIndentation'
+import { ArgsParser } from '../argsParser'
 import { isValidTypeSpec } from '../regexes'
 import { isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
@@ -19,51 +21,44 @@ export default class VarTag extends AbstractTag {
 		readonly varName: string,
 		readonly varType: PhpType | null,
 		readonly expression: string | null,
-		readonly nameOffset: integer,
+		readonly nameRange: Range,
 	) {
 		super(range)
 	}
 
 	static fromDumbTag(dumbTag: DumbTag, parsingContext: ParsingContext): VarTag | null {
-		const argsParts = dumbTag.args.split(/\s+/, 10) // Generous limit.
-		const nameOffset = dumbTag.args.indexOf('$')
+		const ap = new ArgsParser(dumbTag.args)
 
-		// Doesn't contain a variable name.
-		if (nameOffset === -1) {
+		const typeMatch = ap.consumeRegex(/[^\$]*(?=\$)/) // Everything non-"$" before the first $, or nothing.
+		let typeStr = typeMatch ? typeMatch[0] : null
+		if (typeStr && !isValidTypeSpec(typeStr)) {
+			// Discard type specification if it's invalid. We'll just act
+			// as there was no type specification.
+			typeStr = null
+		}
+
+		const varMatch = ap.consumeRegex(VARIABLE_REGEX)
+		if (!varMatch) {
 			return null
 		}
 
-		// Just a variable name without a specified type.
-		if (isValidVariableName(argsParts[0])) {
-			return new this(
-				dumbTag.tagRange,
-				argsParts[0],
-				null,
-				// Extract the expression after "=".
-				stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
-				dumbTag.argsOffset + nameOffset,
-			)
-		}
-
-		// Invalid {var ...} structure - doesn't have a $variableName as
-		// the second arg.
-		if (!isValidVariableName(argsParts[1])) {
-			return null
-		}
-
-		// Invalid {var ...} structure - doesn't have a $variableName as
-		// the second word.
-		if (!isValidTypeSpec(argsParts[0])) {
+		const varName = varMatch[0]
+		const varNameOffset = varMatch.indices![0][0]
+		if (!isValidVariableName(varName)) {
+			// Missing or invalid variable name specification.
 			return null
 		}
 
 		return new this(
 			dumbTag.tagRange,
-			argsParts[1],
-			parsePhpType(argsParts[0])!,
-			// Extract the expression after "=".
+			varName,
+			typeStr ? parsePhpType(typeStr) : null,
+			// Extract the expression after "=".32-
 			stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
-			dumbTag.argsOffset + nameOffset,
+			{
+				startOffset: dumbTag.argsOffset + varNameOffset,
+				endOffset: dumbTag.argsOffset + varNameOffset + varName.length,
+			} as Range,
 		)
 	}
 
@@ -71,7 +66,7 @@ export default class VarTag extends AbstractTag {
 		const typeRepr = getPhpTypeRepr(this.varType)
 
 		return stripIndentation(`
-		Defines variable \`${this.varName}\` of type \`${typeRepr}\`
+		Defines variable \`${this.varName}\` of type \`${typeRepr}\`.
 
 		Example:
 		\`\`\`latte

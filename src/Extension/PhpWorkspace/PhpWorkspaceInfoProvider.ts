@@ -88,8 +88,8 @@ export class PhpWorkspaceInfoProvider {
 
 		let total = phpFilesUris.length
 		let count = 0
-		do {
-			const urisBatch = phpFilesUris.splice(0, 100)
+		while (phpFilesUris.length) {
+			const urisBatch = phpFilesUris.splice(0, 200)
 			count += urisBatch.length
 
 			const promises = urisBatch.map(async (uri) => this.scanPhpFile(uri))
@@ -97,7 +97,7 @@ export class PhpWorkspaceInfoProvider {
 
 			msg.dispose()
 			msg = statusBarSpinMessage(`Scanned ${count} of ${total} PHP files`)
-		} while (phpFilesUris.length)
+		}
 		msg.dispose()
 	}
 
