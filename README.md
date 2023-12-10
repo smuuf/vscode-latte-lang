@@ -22,8 +22,10 @@ Open and install via VS Code Marketplace: [Nette Latte templates](https://market
 - **Goto variable definitions** for variables defined in Latte files.
 - **Goto class definition** of typed variables in Latte files.
 - **Goto method definition** of methods called on typed variables in Latte files.
+- **Goto files** used in `{include ...}`, `{layout ...}`, `{sandbox ...}`, `{extends ...}` tags.
 - **Hover information** containing type of variables in Latte files.
 - **Hover information** containing return type of method calls in Latte files.
+- **Type inference** of values coming from known method calls with known return types.
 - **Type resolution** of basic iterables.
   - For example for `{foreach $a as $b}` where `$a` is of type `array<MyType>` we will know `$b` is of type `MyType`.
 - **Autocomplete** support for `$variables` and `$object->methodName()` in Latte files.
