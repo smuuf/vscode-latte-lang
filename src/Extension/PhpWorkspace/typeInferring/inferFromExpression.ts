@@ -64,9 +64,9 @@ async function inferFromMethodCall(expr: string, ctx: InferringContext) {
 	}
 
 	let className = getPhpTypeRepr(subjectVarInfo.type)
-	const methodInfo = ctx.phpWorkspaceInfoProvider
-		.getPhpClass(className)
-		?.getMethod(methodName)
+	const methodInfo = await (
+		await ctx.phpWorkspaceInfoProvider.getPhpClass(className)
+	)?.getMethod(methodName)
 	if (!methodInfo || !methodInfo.returnType) {
 		return null
 	}

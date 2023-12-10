@@ -1,4 +1,4 @@
-import { KeyObject } from 'crypto'
+const devMode = process.env.NODE_ENV === 'development'
 
 /**
  * Returns true if the first argument A has "instanceof B" evaluated as true
@@ -16,6 +16,14 @@ export function isObject(obj: any): boolean {
 	return obj != null && obj.constructor.name === 'Object'
 }
 
+export function isObjectEmpty(object: object | Record<string, unknown>): boolean {
+	// If any enumerable property is found object is not empty
+	for (const _ in object) {
+		return false
+	}
+	return true
+}
+
 /**
  * Makes TS think/know the subject is now of type T.
  */
@@ -23,6 +31,10 @@ export function narrowType<T>(subject: any): asserts subject is T {}
 
 export function dump(thing: any): void {
 	console.dir(thing, { depth: 10 })
+}
+
+export function debugLog(...things: any): void {
+	devMode && console.log('[latte-ext]', ...things)
 }
 
 /**

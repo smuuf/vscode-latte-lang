@@ -77,7 +77,7 @@ export default class VarTypeTag extends AbstractTag {
 
 		Example:
 		\`\`\`latte
-		{varType Nette\Security\User $user}
+		{varType Nette\\Security\\User $user}
 		{varType string $lang}
 		\`\`\`
 

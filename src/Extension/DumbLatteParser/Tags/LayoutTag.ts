@@ -3,6 +3,7 @@ import DumbTag from '../Scanner/DumbTag'
 import { AbstractTag, ParsingContext, Range, TagReferencingTargetFile } from '../types'
 import { ArgsParser } from '../argsParser'
 import { stripIndentation } from '../../utils/stripIndentation'
+import { FILE_REGEX } from '../regexes'
 
 /**
  * {layout "file"}
@@ -29,7 +30,7 @@ export default class LayoutTag extends AbstractTag implements TagReferencingTarg
 
 		const ap = new ArgsParser(args)
 		let originalTargetPathOffset = ap.offset
-		let relativePath = ap.consumeQuotedStringOrWord()
+		let relativePath = ap.consumeQuotedStringOrRegex(FILE_REGEX)
 		if (!relativePath) {
 			return null
 		}

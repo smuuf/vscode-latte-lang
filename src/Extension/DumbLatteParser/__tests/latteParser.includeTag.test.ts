@@ -13,15 +13,18 @@ const EXPECTATIONS: object = {
 		'/base-dir/dir-1/dir-2/file-a.latte',
 	],
 	"{include './dir-1/file-a'}": ['./dir-1/file-a', '/base-dir/dir-1/file-a'],
-	"{include file-a'}": ["file-a'", "/base-dir/file-a'"], // Extra trailing quotes.
-	"{include 'file-a}": ["'file-a", "/base-dir/'file-a"], // Extra leading quotes.
+	"{include file-a'}": null, // Extra trailing quotes fails the match.
+	// Below the extra leading quote doesn't fail the filename regex match, but
+	// Latte would interpret it as a block name. See
+	// https://github.com/nette/latte/blob/794f252da7437499e467766d633eed85e1a437b7/src/Latte/Essential/CoreExtension.php#L221
+	"{include 'file-a}": null,
 	"{include '../file-a'}": ['../file-a', '/file-a'],
 	"{include '../file-a.latte'}": ['../file-a.latte', '/file-a.latte'],
 	"{include '../dir-1/file-a'}": ['../dir-1/file-a', '/dir-1/file-a'],
 	"{include '../../../dir-1/file-a'}": ['../../../dir-1/file-a', '/dir-1/file-a'],
-	"{include '../../../file-a}": ["'../../../file-a", '/file-a'], // Extra leading quote.
-	"{include ../../../file-a'}": ["../../../file-a'", "/file-a'"], // Extra trailing quote.
-	'{include blockname}': null, // Block instead of file.
+	"{include '../../../file-a}": null, // Extra leading quote fails the match.
+	"{include ../../../file-a'}": ['../../../file-a', '/file-a'], // Extra trailing quote doesn't fail the match, but is ignored.
+	'{include blockname}': null, // Block instead of file fails the match.
 }
 
 for (const [subject, expected] of Object.entries(EXPECTATIONS)) {

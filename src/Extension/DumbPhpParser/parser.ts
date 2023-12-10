@@ -90,7 +90,7 @@ function extractMethods(
 	startOffset: number,
 	parsingContext: ParsingContext,
 ): PhpClassMethods {
-	const methods: PhpClassMethods = new Map()
+	const methods: PhpClassMethods = {}
 	if (!source) {
 		return methods
 	}
@@ -130,7 +130,7 @@ function extractMethods(
 			returnType: parsePhpTypeRaw(returnType, parsingContext),
 		} as PhpMethodInfo
 
-		methods.set(methodName, methodDef)
+		methods[methodName] = methodDef
 	}
 
 	return methods

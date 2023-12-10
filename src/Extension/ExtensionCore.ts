@@ -6,11 +6,11 @@ import { GotoDefinitionProviderAggregator } from './VscodeApi/GotoDefinitionProv
 import { WorkspaceEvents } from './WorkspaceEvents'
 import { CompletionProviderAggregator } from './VscodeApi/CompletionProvider'
 import { HoverProviderAggregator } from './VscodeApi/HoverProvider'
+import { DataStorage } from './utils/DataStorage'
 
 const LANG_ID = 'latte'
 
 export class ExtensionCore {
-	public ctx: vscode.ExtensionContext
 	public workspaceEvents: WorkspaceEvents
 
 	public latteFileInfoProvider: LatteFileInfoProvider
@@ -23,8 +23,10 @@ export class ExtensionCore {
 
 	public onExit: (() => void)[] = []
 
-	public constructor(ctx: vscode.ExtensionContext) {
-		this.ctx = ctx
+	public constructor(
+		private ctx: vscode.ExtensionContext,
+		public dataStorage: DataStorage,
+	) {
 		this.workspaceEvents = new WorkspaceEvents()
 
 		this.latteFileInfoProvider = new LatteFileInfoProvider(this)

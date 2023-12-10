@@ -19,98 +19,82 @@ test('Detect classes: Basic', async () => {
 				uri: null,
 				offset: str.indexOf('SomeClass'),
 			},
-			methods: new Map([
-				[
-					'__construct',
-					{
-						name: '__construct',
-						location: {
-							uri: null,
-							offset: str.indexOf('__construct'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: false,
-						},
-						returnType: parsePhpType('mixed'),
+			methods: {
+				__construct: {
+					name: '__construct',
+					location: {
+						uri: null,
+						offset: str.indexOf('__construct'),
 					},
-				],
-				[
-					'someClass_method_1_public',
-					{
-						name: 'someClass_method_1_public',
-						location: {
-							uri: null,
-							offset: str.indexOf('someClass_method_1_public'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: false,
-						},
-						returnType: parsePhpType('bool'),
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: false,
 					},
-				],
-				[
-					'someClass_method_2_public',
-					{
-						name: 'someClass_method_2_public',
-						location: {
-							uri: null,
-							offset: str.indexOf('someClass_method_2_public'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: false,
-						},
-						returnType: parsePhpType('App\\Model\\Services\\SomeSubClass'),
+					returnType: parsePhpType('mixed'),
+				},
+				someClass_method_1_public: {
+					name: 'someClass_method_1_public',
+					location: {
+						uri: null,
+						offset: str.indexOf('someClass_method_1_public'),
 					},
-				],
-				[
-					'someClass_method_3_public_static',
-					{
-						name: 'someClass_method_3_public_static',
-						location: {
-							uri: null,
-							offset: str.indexOf('someClass_method_3_public_static'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: true,
-						},
-						returnType: parsePhpType('string'),
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: false,
 					},
-				],
-				[
-					'someClass_method_4_private',
-					{
-						name: 'someClass_method_4_private',
-						location: {
-							uri: null,
-							offset: str.indexOf('someClass_method_4_private'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PRIVATE,
-							static: false,
-						},
-						returnType: parsePhpType('array|bool'),
+					returnType: parsePhpType('bool'),
+				},
+				someClass_method_2_public: {
+					name: 'someClass_method_2_public',
+					location: {
+						uri: null,
+						offset: str.indexOf('someClass_method_2_public'),
 					},
-				],
-				[
-					'someClass_method_5_protected',
-					{
-						name: 'someClass_method_5_protected',
-						location: {
-							uri: null,
-							offset: str.indexOf('someClass_method_5_protected'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PROTECTED,
-							static: false,
-						},
-						returnType: parsePhpType('int'),
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: false,
 					},
-				],
-			]),
+					returnType: parsePhpType('App\\Model\\Services\\SomeSubClass'),
+				},
+
+				someClass_method_3_public_static: {
+					name: 'someClass_method_3_public_static',
+					location: {
+						uri: null,
+						offset: str.indexOf('someClass_method_3_public_static'),
+					},
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: true,
+					},
+					returnType: parsePhpType('string'),
+				},
+
+				someClass_method_4_private: {
+					name: 'someClass_method_4_private',
+					location: {
+						uri: null,
+						offset: str.indexOf('someClass_method_4_private'),
+					},
+					flags: {
+						visibility: SymbolVisibility.PRIVATE,
+						static: false,
+					},
+					returnType: parsePhpType('array|bool'),
+				},
+				someClass_method_5_protected: {
+					name: 'someClass_method_5_protected',
+					location: {
+						uri: null,
+						offset: str.indexOf('someClass_method_5_protected'),
+					},
+					flags: {
+						visibility: SymbolVisibility.PROTECTED,
+						static: false,
+					},
+					returnType: parsePhpType('int'),
+				},
+			},
 		},
 	]
 
@@ -133,83 +117,68 @@ test('Detect classes: Subclass', async () => {
 				uri: null,
 				offset: str.indexOf('SomeSubClass'),
 			},
-			methods: new Map([
-				[
-					'someSubClass_method_1_public',
-					{
-						name: 'someSubClass_method_1_public',
-						location: {
-							uri: null,
-							offset: str.indexOf('someSubClass_method_1_public'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: false,
-						},
-						returnType: parsePhpType('bool'),
+			methods: {
+				someSubClass_method_1_public: {
+					name: 'someSubClass_method_1_public',
+					location: {
+						uri: null,
+						offset: str.indexOf('someSubClass_method_1_public'),
 					},
-				],
-				[
-					'someSubClass_method_2_public',
-					{
-						name: 'someSubClass_method_2_public',
-						location: {
-							uri: null,
-							offset: str.indexOf('someSubClass_method_2_public'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: false,
-						},
-						returnType: parsePhpType('App\\Model\\Services\\SomeClass'),
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: false,
 					},
-				],
-				[
-					'someSubClass_method_3_public_static',
-					{
-						name: 'someSubClass_method_3_public_static',
-						location: {
-							uri: null,
-							offset: str.indexOf('someSubClass_method_3_public_static'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: true,
-						},
-						returnType: parsePhpType('string'),
+					returnType: parsePhpType('bool'),
+				},
+				someSubClass_method_2_public: {
+					name: 'someSubClass_method_2_public',
+					location: {
+						uri: null,
+						offset: str.indexOf('someSubClass_method_2_public'),
 					},
-				],
-				[
-					'someSubClass_method_4_private',
-					{
-						name: 'someSubClass_method_4_private',
-						location: {
-							uri: null,
-							offset: str.indexOf('someSubClass_method_4_private'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PRIVATE,
-							static: false,
-						},
-						returnType: parsePhpType('array'),
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: false,
 					},
-				],
-				[
-					'someSubClass_method_5_protected',
-					{
-						name: 'someSubClass_method_5_protected',
-						location: {
-							uri: null,
-							offset: str.indexOf('someSubClass_method_5_protected'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PROTECTED,
-							static: false,
-						},
-						returnType: parsePhpType('int'),
+					returnType: parsePhpType('App\\Model\\Services\\SomeClass'),
+				},
+				someSubClass_method_3_public_static: {
+					name: 'someSubClass_method_3_public_static',
+					location: {
+						uri: null,
+						offset: str.indexOf('someSubClass_method_3_public_static'),
 					},
-				],
-			]),
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: true,
+					},
+					returnType: parsePhpType('string'),
+				},
+				someSubClass_method_4_private: {
+					name: 'someSubClass_method_4_private',
+					location: {
+						uri: null,
+						offset: str.indexOf('someSubClass_method_4_private'),
+					},
+					flags: {
+						visibility: SymbolVisibility.PRIVATE,
+						static: false,
+					},
+					returnType: parsePhpType('array'),
+				},
+				someSubClass_method_5_protected: {
+					name: 'someSubClass_method_5_protected',
+					location: {
+						uri: null,
+						offset: str.indexOf('someSubClass_method_5_protected'),
+					},
+					flags: {
+						visibility: SymbolVisibility.PROTECTED,
+						static: false,
+					},
+					returnType: parsePhpType('int'),
+				},
+			},
 		},
 	]
 
@@ -232,23 +201,20 @@ test('Detect classes: Subclass', async () => {
 				uri: null,
 				offset: str.indexOf('SomeSubSubClass'),
 			},
-			methods: new Map([
-				[
-					'someSubSubClass_method_1_public',
-					{
-						name: 'someSubSubClass_method_1_public',
-						location: {
-							uri: null,
-							offset: str.indexOf('someSubSubClass_method_1_public'),
-						},
-						flags: {
-							visibility: SymbolVisibility.PUBLIC,
-							static: false,
-						},
-						returnType: parsePhpType('bool'),
+			methods: {
+				someSubSubClass_method_1_public: {
+					name: 'someSubSubClass_method_1_public',
+					location: {
+						uri: null,
+						offset: str.indexOf('someSubSubClass_method_1_public'),
 					},
-				],
-			]),
+					flags: {
+						visibility: SymbolVisibility.PUBLIC,
+						static: false,
+					},
+					returnType: parsePhpType('bool'),
+				},
+			},
 		},
 	]
 

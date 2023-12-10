@@ -3,13 +3,21 @@ import config from '../../config'
 import { lruCache } from './lruCache'
 import { isInstanceOf, isString, narrowType } from './common'
 
-export function statusBarMessage(msg: string, prefix: string = ''): vscode.Disposable {
+export function statusBarMessage(
+	msg: string,
+	prefix: string = '',
+	timeout: integer | null = null,
+): vscode.Disposable {
 	msg = `${prefix ? prefix + ' ' : ''}[Latte] ${msg}`
-	return vscode.window.setStatusBarMessage(msg, 20_000)
+	timeout = timeout ? timeout : 10 // Default timeout 10 seconds.
+	return vscode.window.setStatusBarMessage(msg, timeout * 1_000)
 }
 
-export function statusBarSpinMessage(msg: string): vscode.Disposable {
-	return statusBarMessage(msg, '$(sync~spin)')
+export function statusBarSpinMessage(
+	msg: string,
+	timeout: integer | null = null,
+): vscode.Disposable {
+	return statusBarMessage(msg, '$(sync~spin)', timeout)
 }
 
 export function infoMessage(msg: string): void {
@@ -48,6 +56,15 @@ export const debugMessage = config.debugging
  */
 function isTextDocument(arg: any): arg is TextDoc {
 	return (arg.uri || arg.fileName) && arg.languageId !== null
+}
+
+export async function uriFileExists(uri: vscode.Uri): Promise<boolean> {
+	try {
+		vscode.workspace.fs.stat(uri)
+		return true
+	} catch {
+		return false
+	}
 }
 
 async function getPositionAtOffset(

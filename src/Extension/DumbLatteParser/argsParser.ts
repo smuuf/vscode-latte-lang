@@ -64,7 +64,7 @@ export class ArgsParser {
 		return null
 	}
 
-	public peekQuotedStringOrWord(): string | null {
+	public peekQuotedStringOrRegex(regex: RegExp | null = null): string | null {
 		const foundQuotes =
 			captureBalanced(["'", "'"], this.input, this._offset, true) ||
 			captureBalanced(['"', '"'], this.input, this._offset, true)
@@ -73,16 +73,18 @@ export class ArgsParser {
 			return foundQuotes.content
 		}
 
-		const foundWord = this.peekRegex(/[^\s]+/)
-		if (foundWord) {
-			return foundWord[0]
+		if (regex) {
+			const foundRegex = this.peekRegex(regex)
+			if (foundRegex) {
+				return foundRegex[0]
+			}
 		}
 
 		return null
 	}
 
-	public consumeQuotedStringOrWord(): string | null {
-		const match = this.peekQuotedStringOrWord()
+	public consumeQuotedStringOrRegex(regex: RegExp | null = null): string | null {
+		const match = this.peekQuotedStringOrRegex(regex)
 		if (match !== null) {
 			this._offset += match.length
 			this.consumeWhitespace() // Eat any additional whitespace.

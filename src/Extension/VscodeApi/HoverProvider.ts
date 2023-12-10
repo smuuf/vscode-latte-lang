@@ -110,8 +110,9 @@ class VariableNameHoverProvider {
 
 		if (varInfo) {
 			const typeRepr = getPhpTypeRepr(varInfo.type)
-			const classInfo =
-				this.extCore.phpWorkspaceInfoProvider.getPhpClassInfo(typeRepr)
+			const classInfo = await this.extCore.phpWorkspaceInfoProvider.getPhpClassInfo(
+				typeRepr,
+			)
 
 			if (classInfo && classInfo.location?.uri) {
 				const typeName = varInfo ? getPhpTypeRepr(varInfo.type) : `_unknown_`
@@ -180,9 +181,9 @@ class MethodCallHoverProvider {
 		}
 
 		const className = getPhpTypeRepr(subjectVarInfo.type)
-		const methodInfo = this.extCore.phpWorkspaceInfoProvider
-			.getPhpClass(className)
-			?.getMethod(methodName)
+		const methodInfo = await (
+			await this.extCore.phpWorkspaceInfoProvider.getPhpClass(className)
+		)?.getMethod(methodName)
 		if (!methodInfo || !methodInfo.location) {
 			return null
 		}

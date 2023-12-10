@@ -15,7 +15,9 @@ test('Get public methods of class', async () => {
 	const ourClass = ourClasses[0]
 
 	const p = new PhpClass(ourClass, (fqn) => classes.get(fqn))
-	const methodNames = p.getPublicMethods().map((method: PhpMethodInfo) => method.name)
+	const methodNames = (await p.getPublicMethods()).map(
+		(method: PhpMethodInfo) => method.name,
+	)
 
 	expect(methodNames).toEqual([
 		'someSubSubClass_method_1_public',

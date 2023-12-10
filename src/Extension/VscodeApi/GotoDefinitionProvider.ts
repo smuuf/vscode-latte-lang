@@ -4,7 +4,7 @@ import { ExtensionCore } from '../ExtensionCore'
 import { getOffsetAtPosition, getPositionAtOffset } from '../utils/common.vscode'
 import { normalizeTypeName } from '../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../phpTypeParser/utils'
-import { AbstractPoi, GotoDefinitionPoi, PoiType } from '../LattePois/poiTypes'
+import { GotoDefinitionPoi, PoiType } from '../LattePois/poiTypes'
 
 interface GotoDefinitionProvider {
 	resolve: (
@@ -157,9 +157,9 @@ class MethodCallGotoDefinitionProvider {
 		}
 
 		const className = getPhpTypeRepr(subjectVarInfo.type)
-		const methodInfo = this.extCore.phpWorkspaceInfoProvider
-			.getPhpClass(className)
-			?.getMethod(methodName)
+		const methodInfo = await (
+			await this.extCore.phpWorkspaceInfoProvider.getPhpClass(className)
+		)?.getMethod(methodName)
 		if (!methodInfo || !methodInfo.location) {
 			return null
 		}
@@ -208,7 +208,9 @@ class ClassGotoDefinitionProvider {
 		let className = normalizeTypeName(doc.getText(range))
 
 		// The requested symbol is a class name.
-		const classInfo = this.extCore.phpWorkspaceInfoProvider.getPhpClassInfo(className)
+		const classInfo = await this.extCore.phpWorkspaceInfoProvider.getPhpClassInfo(
+			className,
+		)
 		if (!classInfo) {
 			return null
 		}

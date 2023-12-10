@@ -147,9 +147,9 @@ class MethodCallCompletionProvider {
 		}
 
 		let subjectType = getPhpTypeRepr(subjectVar.type)
-		const availableMethods = this.extCore.phpWorkspaceInfoProvider
-			.getPhpClass(subjectType)
-			?.getPublicMethods()
+		const availableMethods = await (
+			await this.extCore.phpWorkspaceInfoProvider.getPhpClass(subjectType)
+		)?.getPublicMethods()
 
 		if (!availableMethods) {
 			return null

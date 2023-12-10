@@ -3,6 +3,7 @@ import DumbTag from '../Scanner/DumbTag'
 import { AbstractTag, ParsingContext, Range, TagReferencingTargetFile } from '../types'
 import { ArgsParser } from '../argsParser'
 import { stripIndentation } from '../../utils/stripIndentation'
+import { FILE_REGEX } from '../regexes'
 
 /**
  * Reference: https://github.com/nette/latte/blob/794f252da7437499e467766d633eed85e1a437b7/src/Latte/Essential/CoreExtension.php#L211
@@ -36,7 +37,7 @@ export default class IncludeTag extends AbstractTag implements TagReferencingTar
 		}
 
 		let originalTargetPathOffset = ap.offset
-		let relativePath = ap.consumeQuotedStringOrWord()
+		let relativePath = ap.consumeQuotedStringOrRegex(FILE_REGEX)
 		if (!relativePath || relativePath[0] === '#') {
 			// We care about files only and "#" represents an explicit block name.
 			return null

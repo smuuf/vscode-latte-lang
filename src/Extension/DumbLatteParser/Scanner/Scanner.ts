@@ -244,7 +244,9 @@ export class Scanner {
 		const startOffset = state.lastLatteOpenTagOffset
 		const endOffset = state.offset
 
-		const match = tagContent.match(/(?<name>[^\s]+)(?<sepSpace>\s+)?(?<args>.*$)?/)
+		// "/s" because dot should match newlines, because tag could have
+		// multiple lines.
+		const match = tagContent.match(/(?<name>[^\s]+)(?<sepSpace>\s+)?(?<args>.*$)?/s)
 		if (match) {
 			// We want exact offsets of name and args, so we must do this a bit
 			// more complicated (accounf for length of the space between

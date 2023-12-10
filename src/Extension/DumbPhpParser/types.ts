@@ -17,7 +17,9 @@ export type PhpMethodFlags = {
 	static: boolean
 }
 
-export type PhpClassMethods = Map<string, PhpMethodInfo>
+export type PhpClassMethods = {
+	[name: string]: PhpMethodInfo
+}
 
 export type PhpClassInfo = {
 	name: string

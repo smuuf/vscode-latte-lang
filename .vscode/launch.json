@@ -13,6 +13,9 @@
             "request": "launch",
             "type": "extensionHost",
             "sourceMaps": true,
+            "env": {
+                "NODE_ENV": "development",
+            }
         },
     ]
 }

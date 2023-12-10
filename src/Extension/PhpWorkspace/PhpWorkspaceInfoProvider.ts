@@ -1,127 +1,127 @@
 import * as vscode from 'vscode'
-import { getUriString, statusBarSpinMessage } from '../utils/common.vscode'
+import { statusBarSpinMessage, uriFileExists } from '../utils/common.vscode'
 import { parsePhpSource } from '../DumbPhpParser/parser'
 import { PhpClassInfo } from '../DumbPhpParser/types'
 import { ExtensionCore } from '../ExtensionCore'
-import { DefaultMap } from '../utils/DefaultMap'
 import { FILE_EXT_PHP, LANG_ID_PHP } from '../../constants'
 import { PhpClass } from './PhpClass'
+import { debugLog, isObjectEmpty } from '../utils/common'
+import { timeit } from '../utils/timeit'
 
-class PhpWorkspaceInfo {
-	// Yes, there can be multiple same-fully-qualified PHP class names in the
-	// same workspace that are in different PHP files, but that's their problem
-	// and I don't care. We'll store only one class info per one fully qualified
-	// PHP class name.
-	public classMap: Map<phpClassFqn, PhpClassInfo>
-	public fileMap
-
-	public constructor() {
-		this.classMap = new Map()
-		this.fileMap = new DefaultMap<filePath, Set<phpClassFqn>>(
-			() => new Set<phpClassFqn>(),
-		)
-	}
-}
+type ClassMapType = { [fqn: phpClassFqn]: PhpClassInfo }
 
 export class PhpWorkspaceInfoProvider {
-	workspaceInfo: PhpWorkspaceInfo
-	classInfoProviderCallback: (classFqn: string) => PhpClassInfo | null
+	classMap: ClassMapType
+	classInfoProviderCallback: (classFqn: string) => Promise<PhpClassInfo | null>
 
-	public constructor(extCore: ExtensionCore) {
-		this.workspaceInfo = new PhpWorkspaceInfo()
+	public constructor(private extCore: ExtensionCore) {
+		this.classMap = extCore.dataStorage.fetchAllClassInfos() || {}
+
 		this.classInfoProviderCallback = (classFqn: string) =>
 			this.getPhpClassInfo(classFqn)
 
-		if (!this.workspaceInfo.classMap.size) {
-			this.scanWorkspace()
-		}
+		// If we haven't got cached data from data storage, we start scanning
+		// PHP files almost immediately (but let's wait a bit, to avoid clogging
+		// vscode which might be starting other extensions too).
+		// If we've got some cached data, wait even longer.
+		const scanStartTimeout = isObjectEmpty(this.classMap) ? 1000 : 10_000
+		setTimeout(() => this.scanWorkspace(), scanStartTimeout)
 
 		// Register file-change events.
 		const workspaceEvents = extCore.workspaceEvents
 		workspaceEvents.addDocumentSaveHandler(async (doc: TextDoc) => {
-			await this.forgetPhpFile(doc.uri)
 			await this.scanPhpFile(doc.uri)
 		}, LANG_ID_PHP)
 		workspaceEvents.addUriChangeHandler(async (uri: vscode.Uri) => {
-			await this.forgetPhpFile(uri)
 			await this.scanPhpFile(uri)
 		}, FILE_EXT_PHP)
 		workspaceEvents.addUriCreateHandler(async (uri: vscode.Uri) => {
 			await this.scanPhpFile(uri)
 		}, FILE_EXT_PHP)
-		workspaceEvents.addUriDeleteHandler(async (uri: vscode.Uri) => {
-			await this.forgetPhpFile(uri)
-		}, FILE_EXT_PHP)
+		// NOTE: We don't "forget" PHP files here, because we handle forgetting
+		// stuff from PHP files elsewhere - if someone requests info for a class
+		// which is supposed to be in some PHP file + we discover the file does
+		// not exist, we just forget the class.
 	}
 
-	public getPhpClass(className: string | null): PhpClass | null {
+	public async getPhpClass(className: string | null): Promise<PhpClass | null> {
 		if (!className) {
 			return null
 		}
 
-		const classInfo = this.workspaceInfo.classMap.get(className) || null
+		const classInfo = await this.getPhpClassInfo(className)
 		return classInfo ? new PhpClass(classInfo, this.classInfoProviderCallback) : null
 	}
 
-	public getPhpClassInfo(className: string): PhpClassInfo | null {
-		return this.workspaceInfo.classMap.get(className) || null
+	public async getPhpClassInfo(className: string): Promise<PhpClassInfo | null> {
+		const classInfo = this.classMap[className] || null
+		if (!classInfo) {
+			return null
+		}
+
+		if (
+			classInfo.location?.uri &&
+			!(await uriFileExists(vscode.Uri.parse(classInfo.location.uri)))
+		) {
+			// We know about a class with this name but the file it's supposed
+			// to be in no longer exists. Forges the class.
+			delete this.classMap[className]
+			return null
+		}
+
+		return classInfo
 	}
 
 	private async scanPhpFile(uri: vscode.Uri): VoidPromise {
 		const bytes = await vscode.workspace.fs.readFile(uri)
 		const classes = await parsePhpSource(bytes.toString(), uri)
 		classes.forEach((cls: PhpClassInfo) => {
-			this.workspaceInfo.classMap.set(cls.fqn, cls)
-			this.workspaceInfo.fileMap.get(getUriString(uri)).add(cls.fqn)
+			this.classMap[cls.fqn] = cls
+			this.extCore.dataStorage.storeClassInfo(cls)
 		})
 	}
 
 	private async scanWorkspace(): VoidPromise {
 		let msg: vscode.Disposable = statusBarSpinMessage(
-			'Scanning workspace for PHP files',
+			'Finding PHP files in workspace',
+			30,
 		)
-		const phpFilesUris = await vscode.workspace.findFiles(
-			'**/*.php',
-			'**/{node_modules,temp,log,.git}/**',
-		)
+		const allFiles = await timeit('scanWorkspace()', async () => {
+			return vscode.workspace.findFiles(
+				new vscode.RelativePattern(
+					vscode.workspace.workspaceFolders![0],
+					'**/*.php',
+				),
+				'**/{node_modules,.git}/**',
+			)
+		})
 		msg.dispose()
+		debugLog(`scanWorkspace(): Found ${allFiles.length} PHP files`)
 
-		let total = phpFilesUris.length
-		let count = 0
-		while (phpFilesUris.length) {
-			const urisBatch = phpFilesUris.splice(0, 200)
-			count += urisBatch.length
+		const outsideVendor: vscode.Uri[] = []
+		const insideVendor: vscode.Uri[] = []
+		allFiles.map((uri: vscode.Uri) => {
+			uri.fsPath.indexOf('/vendor/') === -1
+				? outsideVendor.push(uri)
+				: insideVendor.push(uri)
+		})
 
-			const promises = urisBatch.map(async (uri) => this.scanPhpFile(uri))
-			await Promise.all(promises)
-
-			msg.dispose()
-			msg = statusBarSpinMessage(`Scanned ${count} of ${total} PHP files`)
-		}
+		const totalFilesCount = outsideVendor.length + insideVendor.length
+		msg = statusBarSpinMessage(`Scanning ${totalFilesCount} PHP files`, 30)
+		await timeit('scanWorkspaceFiles() outside vendor dir', async () => {
+			await this.scanWorkspaceFiles(outsideVendor)
+		})
+		await timeit('scanWorkspaceFiles() inside vendor dir', async () => {
+			await this.scanWorkspaceFiles(insideVendor)
+		})
 		msg.dispose()
 	}
 
-	private async forgetPhpFile(uri: vscode.Uri): VoidPromise {
-		const uriStr = getUriString(uri)
-		const workspaceInfo = this.workspaceInfo
-
-		// If we don't know about this file, don't do anything.
-		if (workspaceInfo.fileMap.has(uriStr)) {
-			// If we know about this file, go through each of the PHP classes
-			// we know it contains and then delete this file's reference in our
-			// class map (where we store link between the PHP class name and
-			// the locations/files we know they're defined).
-			const classes = workspaceInfo.fileMap.get(uriStr)
-			classes.forEach((classFqn: phpClassFqn) => {
-				if (workspaceInfo.classMap.get(classFqn)?.location?.uri === uriStr) {
-					workspaceInfo.classMap.delete(classFqn)
-				}
-			})
-
-			// And don't forget to forget the PHP file itself.
-			workspaceInfo.fileMap.delete(uriStr)
+	private async scanWorkspaceFiles(uris: vscode.Uri[]) {
+		while (uris.length) {
+			const urisBatch = uris.splice(0, 600)
+			const promises = urisBatch.map(async (uri) => this.scanPhpFile(uri))
+			await Promise.all(promises)
 		}
-
-		return this.scanPhpFile(uri)
 	}
 }
