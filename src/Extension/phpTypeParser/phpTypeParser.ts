@@ -1,7 +1,7 @@
 import { lruCache } from '../utils/lruCache.js'
 import { BASIC_ITERABLES, BUILTIN_TYPES } from './definitions.js'
 import * as parser from './parser/parser.js'
-import { ParsingContext } from './types.js'
+import { ImportContext } from './types.js'
 
 //
 // BEWARE! This is a pretty chaotically put together module just so it _somehow_
@@ -26,9 +26,9 @@ type SingleType = {
 
 export function resolveMaybeImportedName(
 	name: string,
-	parsingContext: ParsingContext | null = null,
+	importContext: ImportContext | null = null,
 ): string {
-	if (!parsingContext) {
+	if (!importContext) {
 		return name
 	}
 
@@ -37,7 +37,7 @@ export function resolveMaybeImportedName(
 	// use A\B\C;
 	// class X extends C {}
 	// ... the result FQN is A\B\C;
-	const importedName = parsingContext.imports.get(name)
+	const importedName = importContext.imports.get(name)
 	if (importedName) {
 		return importedName
 	}
@@ -49,7 +49,7 @@ export function resolveMaybeImportedName(
 	const nsSeparatorIndex = name.indexOf('\\')
 	if (nsSeparatorIndex !== -1) {
 		const firstPart = name.substring(0, nsSeparatorIndex)
-		const importedName = parsingContext.imports.get(firstPart)
+		const importedName = importContext.imports.get(firstPart)
 		if (importedName) {
 			const theRest = name.substring(nsSeparatorIndex + 1)
 			return `${importedName}\\${theRest}`
@@ -58,8 +58,8 @@ export function resolveMaybeImportedName(
 
 	// If the name doesn't correspond to any of the imported names, the name
 	// is in the same namespace as the file.
-	if (parsingContext.namespace) {
-		return `${parsingContext.namespace}\\${name}`
+	if (importContext.namespace) {
+		return `${importContext.namespace}\\${name}`
 	}
 
 	return name
@@ -68,24 +68,26 @@ export function resolveMaybeImportedName(
 function determineIterationItem(
 	typeName: string,
 	template: any[],
-	parsingContext: ParsingContext,
+	importContext: ImportContext,
 ): IterationSpec {
 	// Support for:
 	// 1. (array|\ArrayAccess|\Iterator|\Traversable)<valueType>
 	// 2. (array|\ArrayAccess|\Iterator|\Traversable)<keyType, valueType>
-	typeName = normalizeTypeName(typeName, parsingContext)
-	if (template && BASIC_ITERABLES.includes(typeName)) {
-		if (template.length === 2) {
-			// someType<K, V>
-			return {
-				key: processTypeAst(template[0], parsingContext),
-				value: processTypeAst(template[1], parsingContext),
-			}
-		} else if (template.length === 1) {
-			// someType<V>
-			return {
-				value: processTypeAst(template[0], parsingContext),
-			}
+	typeName = normalizeTypeName(typeName, importContext)
+	if (!template || !BASIC_ITERABLES.includes(typeName)) {
+		return null
+	}
+
+	if (template.length === 2) {
+		// someType<K, V>
+		return {
+			key: processTypeAst(template[0], importContext),
+			value: processTypeAst(template[1], importContext),
+		}
+	} else if (template.length === 1) {
+		// someType<V>
+		return {
+			value: processTypeAst(template[0], importContext),
 		}
 	}
 
@@ -94,7 +96,7 @@ function determineIterationItem(
 
 export function normalizeTypeName(
 	name: string,
-	parsingContext: ParsingContext | null = null,
+	importContext: ImportContext | null = null,
 ): string {
 	// We always refer to fully-qualified class names without their leading "\".
 	if (name[0] == '\\') {
@@ -105,37 +107,47 @@ export function normalizeTypeName(
 		return name
 	}
 
-	return resolveMaybeImportedName(name, parsingContext)
+	return resolveMaybeImportedName(name, importContext)
 }
 
 /**
  * Returns a string representation For a given, possibly nested, AST
  * representing a PHP type.
  */
-function stringifyTypeAst(typeAst: any, parsingContext: ParsingContext): string {
+function stringifyTypeAst(typeAst: any, importContext: ImportContext): string {
 	const union = typeAst.union as Array<any>
 	if (union) {
-		const list = union.map((item: any) => stringifyTypeAst(item, parsingContext))
+		const list = union.map((item: any) => stringifyTypeAst(item, importContext))
 		return list.join('|')
 	}
 
+	let suffix = ''
 	const template = typeAst.template as Array<any>
 	if (template) {
-		const list = template.map((item: any) => stringifyTypeAst(item, parsingContext))
-		return `${normalizeTypeName(typeAst.type, parsingContext)}<${list.join(', ')}>`
+		const list = template.map((item: any) => stringifyTypeAst(item, importContext))
+		suffix = `<${list.join(', ')}>`
 	}
 
-	return normalizeTypeName(typeAst.type, parsingContext)
+	// TODO: This breaks linking to file locations where the type is defined,
+	// because the type is searched for by the repr (e.g. '\NS\MyType') and
+	// a when we look for class definition of '\NS\MyType|null' we find
+	// nothing.
+	// const nullable = typeAst.nullable as boolean
+	// if (nullable) {
+	// 	suffix = `|null`
+	// }
+
+	return normalizeTypeName(typeAst.type, importContext) + suffix
 }
 
 /**
  * Build a PhpType from AST parsed from the internal "type parser".
  */
-function processTypeAst(typeAst: any, parsingContext: ParsingContext): PhpType {
+function processTypeAst(typeAst: any, importContext: ImportContext): PhpType {
 	if (typeAst.union) {
 		return {
-			types: typeAst.union.map((item: any) => processTypeAst(item, parsingContext)),
-			repr: stringifyTypeAst(typeAst, parsingContext),
+			types: typeAst.union.map((item: any) => processTypeAst(item, importContext)),
+			repr: stringifyTypeAst(typeAst, importContext),
 			iteratesAs: null,
 			nullable: false,
 		}
@@ -145,7 +157,7 @@ function processTypeAst(typeAst: any, parsingContext: ParsingContext): PhpType {
 	if (typeAst.list) {
 		typeAst.template = [
 			{
-				type: normalizeTypeName(typeAst.type, parsingContext),
+				type: normalizeTypeName(typeAst.type, importContext),
 				template: null,
 				list: false,
 				union: null,
@@ -156,12 +168,12 @@ function processTypeAst(typeAst: any, parsingContext: ParsingContext): PhpType {
 	}
 
 	return {
-		name: normalizeTypeName(typeAst.type, parsingContext),
-		repr: stringifyTypeAst(typeAst, parsingContext),
+		name: normalizeTypeName(typeAst.type, importContext),
+		repr: stringifyTypeAst(typeAst, importContext),
 		iteratesAs: determineIterationItem(
 			typeAst.type,
 			typeAst.template || null,
-			parsingContext,
+			importContext,
 		),
 		nullable: typeAst.nullable || false,
 	}
@@ -173,12 +185,12 @@ function processTypeAst(typeAst: any, parsingContext: ParsingContext): PhpType {
  */
 function parsePhpTypeRaw(
 	input: string,
-	parsingContext: ParsingContext | null = null,
+	importContext: ImportContext | null = null,
 ): PhpType | null {
-	parsingContext ??= { namespace: '', imports: new Map() }
+	importContext ??= { namespace: '', imports: new Map() }
 
 	try {
-		return processTypeAst(parser.parse(input), parsingContext)
+		return processTypeAst(parser.parse(input.trim()), importContext)
 	} catch {
 		return null
 	}

@@ -176,12 +176,12 @@ test('Simple template scan', () => {
 		}),
 		new DumbTag({
 			name: 'varType',
-			args: 'MyNamespace\\MyClass $devaty',
+			args: '?MyNamespace\\MyClass $devaty',
 			nameOffset: 279,
 			argsOffset: 287,
 			tagRange: {
 				startOffset: 278,
-				endOffset: 314,
+				endOffset: 315,
 			},
 			regionType: RegionType.LATTE_TAG,
 		}),

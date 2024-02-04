@@ -1,4 +1,4 @@
-interface DocBlockData {
+export interface DocBlockData {
 	text: string
 	tags: Map<string, string>
 }

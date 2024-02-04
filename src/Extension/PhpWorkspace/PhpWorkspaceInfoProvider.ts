@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 import { statusBarSpinMessage, uriFileExists } from '../utils/common.vscode'
-import { parsePhpSource } from '../DumbPhpParser/parser'
-import { PhpClassInfo } from '../DumbPhpParser/types'
+import { parsePhpSource } from '../phpParser/parser'
+import { PhpClassInfo } from '../phpParser/types'
 import { ExtensionCore } from '../ExtensionCore'
 import { FILE_EXT_PHP, LANG_ID_PHP } from '../../constants'
 import { PhpClass } from './PhpClass'
@@ -74,8 +74,9 @@ export class PhpWorkspaceInfoProvider {
 
 	private async scanPhpFile(uri: vscode.Uri): VoidPromise {
 		const bytes = await vscode.workspace.fs.readFile(uri)
-		const classes = await parsePhpSource(bytes.toString(), uri)
-		classes.forEach((cls: PhpClassInfo) => {
+		const fileData = await parsePhpSource(bytes.toString(), uri.fsPath)
+
+		Object.values(fileData.classes).forEach((cls: PhpClassInfo) => {
 			this.classMap[cls.fqn] = cls
 			this.extCore.dataStorage.storeClassInfo(cls)
 		})

@@ -14,6 +14,11 @@ class SomeClass {
 
 	use SmartObject;
 
+	public ?string $someClass_prop_1;
+	public int|bool $someClass_prop_2;
+	protected int $someClass_prop_3_protected_static;
+	public \DateTime $someClass_prop_4;
+
 	public function __construct(
 		private EntityFileSystemService $entityFileSystemService,
 	) {}
@@ -36,7 +41,7 @@ class SomeClass {
 
 	/**
 	 * lol dockblock
-	 * @return int
+	 * @return MyInt
 	 */
 	protected function someClass_method_5_protected(): int {
 		return 1;

@@ -160,7 +160,7 @@ class MethodCallGotoDefinitionProvider {
 		const methodInfo = await (
 			await this.extCore.phpWorkspaceInfoProvider.getPhpClass(className)
 		)?.getMethod(methodName)
-		if (!methodInfo || !methodInfo.location) {
+		if (!methodInfo || !methodInfo.location?.uri) {
 			return null
 		}
 

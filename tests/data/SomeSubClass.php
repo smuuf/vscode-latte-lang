@@ -6,6 +6,9 @@ namespace App\Model\Services;
 
 class SomeSubClass extends SomeClass {
 
+	public string $someSubClass_prop_1;
+	public \CurlHandle $someSubClass_prop_2;
+
 	public function someSubClass_method_1_public(string $stringArg): bool {
 		return true;
 	}

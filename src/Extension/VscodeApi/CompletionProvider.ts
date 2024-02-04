@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { VARIABLE_REGEX } from '../regexes'
 import { ExtensionCore } from '../ExtensionCore'
 import { mapMap } from '../utils/common'
-import { PhpMethodInfo } from '../DumbPhpParser/types'
+import { PhpMethodInfo } from '../phpParser/types'
 import { getPhpTypeRepr } from '../phpTypeParser/utils'
 import { ELLIPSIS } from '../../constants'
 

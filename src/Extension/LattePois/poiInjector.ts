@@ -137,7 +137,7 @@ function buildVarTypeTagPois(tag: VarTypeTag): AbstractPoi[] {
 				const classInfo = await extCore.phpWorkspaceInfoProvider.getPhpClassInfo(
 					tag.varType.repr,
 				)
-				if (!classInfo || !classInfo.location) {
+				if (!classInfo || !classInfo.location?.uri) {
 					return null
 				}
 

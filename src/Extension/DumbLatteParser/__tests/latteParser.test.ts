@@ -19,8 +19,8 @@ test('Test parser', () => {
 			null,
 			null,
 			{
-				endOffset: 11,
 				startOffset: 5,
+				endOffset: 11,
 			},
 		),
 		new VarTag(
@@ -61,8 +61,8 @@ test('Test parser', () => {
 			null,
 			'4',
 			{
-				endOffset: 117,
 				startOffset: 110,
+				endOffset: 117,
 			},
 		),
 		new DefaultTag(
@@ -74,8 +74,8 @@ test('Test parser', () => {
 			parsePhpType('int|float'),
 			'5',
 			{
-				endOffset: 146,
 				startOffset: 141,
+				endOffset: 146,
 			},
 		),
 		new ForeachTag(
@@ -97,17 +97,17 @@ test('Test parser', () => {
 		new VarTypeTag(
 			{
 				startOffset: 278,
-				endOffset: 314,
+				endOffset: 315,
 			},
 			'$devaty',
-			parsePhpType('MyNamespace\\MyClass')!,
+			parsePhpType('?MyNamespace\\MyClass')!,
 			{
-				endOffset: 314,
-				startOffset: 307,
+				startOffset: 308,
+				endOffset: 315,
 			},
 			{
 				startOffset: 287,
-				endOffset: 307,
+				endOffset: 308,
 			},
 		),
 	]

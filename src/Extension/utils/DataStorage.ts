@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFileSync } from 'fs'
-import { PhpClassInfo } from '../DumbPhpParser/types'
+import { PhpClassInfo } from '../phpParser/types'
 import util from 'util'
 import { dirname } from 'path'
 import { debugLog } from './common'
