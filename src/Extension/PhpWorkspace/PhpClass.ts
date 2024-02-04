@@ -58,7 +58,7 @@ export class PhpClass {
 			// Append found methods from each class in our hierarchy to our
 			// single list of methods.
 			result = result.concat(
-				Object.values(classInfo.methods).filter((method: PhpMethodInfo) => {
+				Object.values(classInfo.methods ?? []).filter((method: PhpMethodInfo) => {
 					const include =
 						method.flags.visibility === SymbolVisibility.PUBLIC && // Only public.
 						!uniqueNames.has(method.name) && // Only if not yet encountered.
@@ -77,26 +77,27 @@ export class PhpClass {
 	public async getPublicProps(): Promise<PhpClassPropInfo[]> {
 		const hierarchyList = await this.getClassHierarchyList()
 
-		// We'll keep track of unique method names - we only want to keep the
-		// first encountered method name (from the most sub-class where
+		// We'll keep track of unique property names - we only want to keep the
+		// first encountered property name (from the most sub-class where
 		// it was found).
 		let uniqueNames = new Set()
 		let result: PhpClassPropInfo[] = []
 
 		for (const classInfo of hierarchyList) {
-			// Append found methods from each class in our hierarchy to our
-			// single list of methods.
+			// Append found properties from each class in our hierarchy to our
+			// single list of properties.
 			result = result.concat(
-				Object.values(classInfo.methods).filter((method: PhpClassPropInfo) => {
-					const include =
-						method.flags.visibility === SymbolVisibility.PUBLIC && // Only public.
-						!uniqueNames.has(method.name) && // Only if not yet encountered.
-						!method.name.match(/^__/) // Exclude PHP magic methods.
-					if (include) {
-						uniqueNames.add(method.name)
-					}
-					return include
-				}),
+				Object.values(classInfo.properties ?? []).filter(
+					(prop: PhpClassPropInfo) => {
+						const include =
+							prop.flags.visibility === SymbolVisibility.PUBLIC && // Only public.
+							!uniqueNames.has(prop.name) // Only if not yet encountered.
+						if (include) {
+							uniqueNames.add(prop.name)
+						}
+						return include
+					},
+				),
 			)
 		}
 

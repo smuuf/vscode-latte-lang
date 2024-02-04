@@ -15,9 +15,10 @@ class SomeClass {
 	use SmartObject;
 
 	public ?string $someClass_prop_1;
-	public int|bool $someClass_prop_2;
-	protected int $someClass_prop_3_protected_static;
-	public \DateTime $someClass_prop_4;
+	public static int|bool $someClass_prop_2_static;
+	protected bool $someClass_prop_3_protected_;
+	public DbArtifact $someClass_prop_4;
+	public \DbArtifact $someClass_prop_5; // Intentionally wrong - absolute namespace.
 
 	public function __construct(
 		private EntityFileSystemService $entityFileSystemService,

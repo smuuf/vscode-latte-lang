@@ -98,8 +98,11 @@ export function normalizeTypeName(
 	name: string,
 	importContext: ImportContext | null = null,
 ): string {
+	let wasAbsolute = false
+
 	// We always refer to fully-qualified class names without their leading "\".
 	if (name[0] == '\\') {
+		wasAbsolute = true
 		name = name.substring(1)
 	}
 
@@ -107,7 +110,11 @@ export function normalizeTypeName(
 		return name
 	}
 
-	return resolveMaybeImportedName(name, importContext)
+	if (!wasAbsolute) {
+		return resolveMaybeImportedName(name, importContext)
+	}
+
+	return name
 }
 
 /**

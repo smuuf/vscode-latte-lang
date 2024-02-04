@@ -1,5 +1,5 @@
 import { parsePhpSource } from '../../phpParser/parser'
-import { PhpClassInfo, PhpMethodInfo, PhpWorkspaceFileData } from '../../phpParser/types'
+import { PhpClassInfo, PhpMethodInfo } from '../../phpParser/types'
 import { PhpClass } from '../PhpClass'
 import { readTestDataFile } from '../../../../tests/testUtils'
 

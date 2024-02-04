@@ -113,3 +113,12 @@ export function stringAfterFirstNeedle(input: string, needle: string): string | 
 
 	return input.substring(input.indexOf(needle) + needle.length)
 }
+
+export function stringBeforeFirstNeedle(input: string, needle: string): string | null {
+	const index = input.indexOf(needle)
+	if (index === -1) {
+		return null
+	}
+
+	return input.substring(0, input.indexOf(needle))
+}

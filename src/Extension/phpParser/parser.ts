@@ -21,10 +21,7 @@ export async function parsePhpSource(
 		filePath ??= '<unknown>'
 		ast = parser.parseCode(source, filePath)
 	} catch {
-		// ...
-	}
-
-	if (!ast) {
+		// ... Ignore error, return empty result.
 		return {
 			classes: {},
 		}

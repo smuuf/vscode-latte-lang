@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { VARIABLE_REGEX } from '../regexes'
 import { ExtensionCore } from '../ExtensionCore'
 import { mapMap } from '../utils/common'
-import { PhpMethodInfo } from '../phpParser/types'
+import { PhpClassPropInfo, PhpMethodInfo } from '../phpParser/types'
 import { getPhpTypeRepr } from '../phpTypeParser/utils'
 import { ELLIPSIS } from '../../constants'
 
@@ -147,33 +147,57 @@ class MethodCallCompletionProvider {
 		}
 
 		let subjectType = getPhpTypeRepr(subjectVar.type)
-		const availableMethods = await (
-			await this.extCore.phpWorkspaceInfoProvider.getPhpClass(subjectType)
-		)?.getPublicMethods()
+		const phpClass = await this.extCore.phpWorkspaceInfoProvider.getPhpClass(
+			subjectType,
+		)
+		const availableMethods = await phpClass?.getPublicMethods()
+		const availableProps = await phpClass?.getPublicProps()
 
-		if (!availableMethods) {
+		if (!availableMethods && !availableProps) {
 			return null
 		}
 
 		// Create a list of completion items from public methods present in
 		// the class (or its parent classes) of the type of the variable.
-		return availableMethods.map((method: PhpMethodInfo) => {
-			const item = new vscode.CompletionItem(
-				method.name,
-				vscode.CompletionItemKind.Method,
-			)
+		const autocompleteList: vscode.CompletionItem[] = []
+		autocompleteList.push(
+			...(availableMethods ?? []).map((method: PhpMethodInfo) => {
+				const item = new vscode.CompletionItem(
+					method.name,
+					vscode.CompletionItemKind.Method,
+				)
 
-			const md = new vscode.MarkdownString()
-			md.appendMarkdown(`**${method.name}(${ELLIPSIS})**`)
-			item.documentation = md
+				const md = new vscode.MarkdownString()
+				const ell = `${method.name}(${ELLIPSIS})`
+				md.appendMarkdown(`_method_`)
+				item.documentation = md
+				item.detail = `${ell}: ${getPhpTypeRepr(method.returnType)}`
 
-			item.detail = getPhpTypeRepr(method.returnType)
+				// Place the name of the method + parentheses and place
+				// the cursor inside those parentheses (snippets do
+				// support this).
+				item.insertText = new vscode.SnippetString(`${method.name}(\${1:})`)
+				return item
+			}),
+		)
 
-			// Place the name of the method + parentheses and place
-			// the cursor inside those parentheses (snippets do
-			// support this).
-			item.insertText = new vscode.SnippetString(`${method.name}(\${1:})`)
-			return item
-		})
+		autocompleteList.push(
+			...(availableProps ?? []).map((prop: PhpClassPropInfo) => {
+				const item = new vscode.CompletionItem(
+					prop.name,
+					vscode.CompletionItemKind.Property,
+				)
+
+				const md = new vscode.MarkdownString()
+				md.appendMarkdown(`_property_`)
+				item.documentation = md
+
+				item.detail = getPhpTypeRepr(prop.type)
+				item.insertText = new vscode.SnippetString(`${prop.name}\${1:}`)
+				return item
+			}),
+		)
+
+		return autocompleteList
 	}
 }

@@ -12,6 +12,7 @@ import {
 	isString,
 	narrowType,
 	stringAfterFirstNeedle,
+	stringBeforeFirstNeedle,
 } from '../utils/common'
 import {
 	PhpType,
@@ -103,18 +104,24 @@ export class AstParser {
 		const className = this.parseName(astNode.name)
 
 		const methods: { [key: string]: PhpMethodInfo } = {}
-		const props: { [key: string]: PhpClassPropInfo } = {}
+		const properties: { [key: string]: PhpClassPropInfo } = {}
 
 		for (const item of astNode.body) {
 			switch (item.kind) {
 				case 'method':
-					const [methodName, info] = this.parseMethod(item as pp.Method)
-					methods[methodName] = info
+					const [methodName, methodInfo] = this.parseMethod(item as pp.Method)
+					methods[methodName] = methodInfo
 					break
-				// case 'propertystatement':
-				// 	{propName, info} = this.parseProperty(item)
-				// 	props[name] = propName
-				// 	break;
+				case 'propertystatement':
+					const propsList = this.parsePropertyStatement(
+						// Wrong typing in the php-parser library.
+						// @ts-ignore
+						item as pp.PropertyStatement,
+					)
+					propsList.forEach(([name, info]: [string, PhpClassPropInfo]) => {
+						properties[name] = info
+					})
+					break
 			}
 		}
 
@@ -136,6 +143,7 @@ export class AstParser {
 				uri: this.uri,
 			},
 			methods: methods,
+			properties: properties,
 		} as PhpClassInfo
 	}
 
@@ -146,6 +154,8 @@ export class AstParser {
 		// type from the method's original non-AST-ed source code.
 		let returnTypeStr = stringAfterFirstNeedle(
 			astNode?.loc?.source ?? '',
+			// We want to extract "MyType|bool" from something
+			// like "function whatever(): MyType|bool {"
 			'):',
 		)?.trim()
 
@@ -159,7 +169,9 @@ export class AstParser {
 		const info: PhpMethodInfo = {
 			name: methodName,
 			flags: {
-				visibility: symbolVisibilityFactory(astNode.visibility),
+				visibility: symbolVisibilityFactory(
+					astNode.visibility ?? SymbolVisibility.PUBLIC,
+				),
 				static: astNode.isStatic,
 			},
 			location: {
@@ -170,6 +182,44 @@ export class AstParser {
 		}
 
 		return [methodName, info]
+	}
+
+	private parsePropertyStatement(
+		astNode: pp.PropertyStatement,
+	): [string, PhpClassPropInfo][] {
+		// Property statement can have multiple property names with similar
+		// definitions.
+		const result: [string, PhpClassPropInfo][] = []
+
+		for (const propNode of astNode.properties) {
+			// We already have our own type-string parser, so let's parse the
+			// type from the props's original non-AST-ed source code.
+			let returnTypeStr = stringBeforeFirstNeedle(
+				astNode?.loc?.source ?? '',
+				// We want to extract "MyType|bool" from something
+				// like "public MyType|bool $whatever"
+				'$',
+			)?.trim()
+
+			const propInfo = {
+				name: this.parseName(propNode.name),
+				flags: {
+					static: astNode.isStatic,
+					visibility: symbolVisibilityFactory(
+						astNode.visibility ?? SymbolVisibility.PUBLIC,
+					),
+				},
+				type: parsePhpType(returnTypeStr ?? 'mixed', this.context),
+				location: {
+					offset: astNode.loc?.start.offset,
+					uri: this.uri,
+				},
+			} as PhpClassPropInfo
+
+			result.push([propInfo.name, propInfo])
+		}
+
+		return result
 	}
 
 	private parseDocBlock(astNode: pp.Node): DocBlockData | null {

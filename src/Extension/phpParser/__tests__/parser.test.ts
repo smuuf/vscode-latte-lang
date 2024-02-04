@@ -1,6 +1,6 @@
 import { parsePhpSource as parsePhpSource } from '../parser'
 import { readTestDataFile } from '../../../../tests/testUtils'
-import { PhpClassMethods, PhpClassProps, SymbolVisibility } from '../types'
+import { PhpMethodInfo, PhpClassPropInfo, SymbolVisibility } from '../types'
 import { parsePhpType } from '../../phpTypeParser/phpTypeParser'
 
 test('Parse classes', async () => {
@@ -65,7 +65,7 @@ test('Parse classes', async () => {
 	// 				},
 	// 				type: parsePhpType('App\\Model\\Services\\SomeSubClass'),
 	// 			},
-	// 		} as PhpClassProps,
+	// 		} as PhpClassPropInfo[],
 	// 		methods: {
 	// 			__construct: {
 	// 				name: '__construct',
@@ -141,7 +141,7 @@ test('Parse classes', async () => {
 	// 				},
 	// 				returnType: parsePhpType('int'),
 	// 			},
-	// 		} as PhpClassMethods,
+	// 		} as PhpClassMethodInfo[],
 	// 	},
 	// ]
 

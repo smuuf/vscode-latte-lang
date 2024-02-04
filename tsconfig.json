@@ -112,6 +112,6 @@
     "./node_modules/*",
     "tests/*",
     "./**/*.test.{ts,js}",
-    "./**/__tests/*"
+    "./**/__tests__/*"
   ]
 }

@@ -32,21 +32,18 @@ export type PhpClassPropInfo = {
 	type?: PhpType | null
 }
 
-export type PhpClassProps = {
-	[name: string]: PhpClassPropInfo
-}
-
-export type PhpClassMethods = {
-	[name: string]: PhpMethodInfo
-}
-
 export type PhpClassInfo = {
 	name: string
 	namespace: string
 	parentFqn: string | null
 	fqn: string
 	location: LocationInfo
-	methods: PhpClassMethods
+	methods: {
+		[name: string]: PhpMethodInfo
+	}
+	properties: {
+		[name: string]: PhpClassPropInfo
+	}
 }
 
 export type ParsingContext = {
