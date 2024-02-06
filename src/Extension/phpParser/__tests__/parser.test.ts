@@ -428,7 +428,5 @@ test('Detect classes: Subclass', async () => {
 		},
 	}
 
-	dump(result)
-
 	expect(result).toEqual(expected)
 })

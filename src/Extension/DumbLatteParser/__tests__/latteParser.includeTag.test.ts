@@ -1,7 +1,7 @@
 import IncludeTag from '../Tags/IncludeTag'
 import { parseLatte } from '../latteParser'
 
-const EXPECTATIONS: object = {
+const EXPECTATIONS = {
 	'{include file-a.latte}': ['file-a.latte', '/base-dir/file-a.latte'],
 	"{include 'file-a.latte'}": ['file-a.latte', '/base-dir/file-a.latte'],
 	'{include ./dir-1/file-a.latte}': [
