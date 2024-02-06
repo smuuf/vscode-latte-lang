@@ -1,26 +1,23 @@
 import * as pp from 'php-parser'
 import {
 	PhpClassInfo,
-	PhpClassPropInfo,
+	PhpClassPropertyInfo,
 	PhpMethodInfo,
 	PhpWorkspaceFileData,
 	SymbolVisibility,
 	symbolVisibilityFactory,
 } from './types'
 import {
-	isInstanceOf,
 	isString,
 	narrowType,
 	stringAfterFirstNeedle,
 	stringBeforeFirstNeedle,
 } from '../utils/common'
-import {
-	PhpType,
-	parsePhpType,
-	resolveMaybeImportedName,
-} from '../phpTypeParser/phpTypeParser'
+import { parsePhpType, resolveMaybeImportedName } from '../phpTypeParser/phpTypeParser'
 import { ImportContext } from '../phpTypeParser/types'
 import { DocBlockData, parseDocBlockString } from './docBlockParser'
+
+const CONSTRUCTOR_METHOD_NAME = '__construct'
 
 export class AstParser {
 	private readonly data: PhpWorkspaceFileData
@@ -67,7 +64,11 @@ export class AstParser {
 		}
 	}
 
-	private parseName(name: string | pp.Identifier | null): string {
+	/**
+	 * Accepts a string or a php-parser's `Identifier`, which wraps a string.
+	 * And just returns the string.
+	 */
+	private parseName(name: string | pp.Identifier): string {
 		if (isString(name)) {
 			narrowType<string>(name)
 			return name
@@ -89,8 +90,8 @@ export class AstParser {
 
 		for (const singleUse of items) {
 			const useName = singleUse.name
-			// We want to extract the name that's actually used further in the code.
-			// E.g. for "A\B\C" we want "C". We also handle aliases, e.g.
+			// We want to extract the name that's actually used further in the
+			// code. E.g. for "A\B\C" we want "C". We also handle aliases, e.g.
 			// for "A\B\C as D" we want "D".
 			const baseName = this.parseName(
 				singleUse.alias ?? useName.substring(useName.lastIndexOf('\\') + 1),
@@ -104,13 +105,24 @@ export class AstParser {
 		const className = this.parseName(astNode.name)
 
 		const methods: { [key: string]: PhpMethodInfo } = {}
-		const properties: { [key: string]: PhpClassPropInfo } = {}
+		const properties: { [key: string]: PhpClassPropertyInfo } = {}
 
 		for (const item of astNode.body) {
 			switch (item.kind) {
 				case 'method':
 					const [methodName, methodInfo] = this.parseMethod(item as pp.Method)
 					methods[methodName] = methodInfo
+
+					if (methodName === CONSTRUCTOR_METHOD_NAME) {
+						const propsList = this.parseConstructorPromotedProperties(
+							item as pp.Method,
+						)
+						propsList.forEach(
+							([name, info]: [string, PhpClassPropertyInfo]) => {
+								properties[name] = info
+							},
+						)
+					}
 					break
 				case 'propertystatement':
 					const propsList = this.parsePropertyStatement(
@@ -118,13 +130,16 @@ export class AstParser {
 						// @ts-ignore
 						item as pp.PropertyStatement,
 					)
-					propsList.forEach(([name, info]: [string, PhpClassPropInfo]) => {
+					propsList.forEach(([name, info]: [string, PhpClassPropertyInfo]) => {
 						properties[name] = info
 					})
 					break
 			}
 		}
 
+		// Extract the parent class's fully qualified name using info we know
+		// from "use" statements. E.g for "use X\Y\Z as B; class A extends B {}"
+		// we will know that "class A extends X\Y\Z".
 		let parentFqn = null
 		if (astNode.extends) {
 			parentFqn = resolveMaybeImportedName(
@@ -186,10 +201,11 @@ export class AstParser {
 
 	private parsePropertyStatement(
 		astNode: pp.PropertyStatement,
-	): [string, PhpClassPropInfo][] {
+	): [string, PhpClassPropertyInfo][] {
 		// Property statement can have multiple property names with similar
-		// definitions.
-		const result: [string, PhpClassPropInfo][] = []
+		// definitions, e.g. "public static bool $a, $b, $c;". It's not common,
+		// but let's know how to deal with that.
+		const result: [string, PhpClassPropertyInfo][] = []
 
 		for (const propNode of astNode.properties) {
 			// We already have our own type-string parser, so let's parse the
@@ -197,7 +213,8 @@ export class AstParser {
 			let returnTypeStr = stringBeforeFirstNeedle(
 				astNode?.loc?.source ?? '',
 				// We want to extract "MyType|bool" from something
-				// like "public MyType|bool $whatever"
+				// like "MyType|bool $whatever", so get everything up
+				// to the dollar sign.
 				'$',
 			)?.trim()
 
@@ -214,7 +231,51 @@ export class AstParser {
 					offset: astNode.loc?.start.offset,
 					uri: this.uri,
 				},
-			} as PhpClassPropInfo
+			} as PhpClassPropertyInfo
+
+			result.push([propInfo.name, propInfo])
+		}
+
+		return result
+	}
+
+	private parseConstructorPromotedProperties(
+		astNode: pp.Method,
+	): [string, PhpClassPropertyInfo][] {
+		const result: [string, PhpClassPropertyInfo][] = []
+
+		for (const argNode of astNode.arguments) {
+			// 1: MODIFIER_PUBLIC - we want only public
+			if (argNode.flags !== 1) {
+				continue
+			}
+
+			// We already have our own type-string parser, so let's parse the
+			// type from the props's original non-AST-ed source code.
+			let returnTypeStr = stringBeforeFirstNeedle(
+				argNode?.loc?.source ?? '',
+				// We want to extract "MyType|bool" from something
+				// like "public MyType|bool $whatever", so get everything up
+				// to the dollar sign.
+				'$',
+			)
+				?.trim()
+				// And we'll remove the visibility modifier to get just
+				// "MyType|bool".
+				.replace(/(public|protected|private)\s*/, '')
+
+			const propInfo = {
+				name: this.parseName(argNode.name),
+				flags: {
+					static: false,
+					visibility: SymbolVisibility.PUBLIC,
+				},
+				type: parsePhpType(returnTypeStr ?? 'mixed', this.context),
+				location: {
+					offset: argNode.loc?.start.offset,
+					uri: this.uri,
+				},
+			} as PhpClassPropertyInfo
 
 			result.push([propInfo.name, propInfo])
 		}

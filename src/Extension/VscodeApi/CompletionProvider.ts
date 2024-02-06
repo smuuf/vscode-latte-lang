@@ -2,7 +2,7 @@ import * as vscode from 'vscode'
 import { VARIABLE_REGEX } from '../regexes'
 import { ExtensionCore } from '../ExtensionCore'
 import { mapMap } from '../utils/common'
-import { PhpClassPropInfo, PhpMethodInfo } from '../phpParser/types'
+import { PhpClassPropertyInfo, PhpMethodInfo } from '../phpParser/types'
 import { getPhpTypeRepr } from '../phpTypeParser/utils'
 import { ELLIPSIS } from '../../constants'
 
@@ -151,7 +151,7 @@ class MethodCallCompletionProvider {
 			subjectType,
 		)
 		const availableMethods = await phpClass?.getPublicMethods()
-		const availableProps = await phpClass?.getPublicProps()
+		const availableProps = await phpClass?.getPublicProperties()
 
 		if (!availableMethods && !availableProps) {
 			return null
@@ -182,7 +182,7 @@ class MethodCallCompletionProvider {
 		)
 
 		autocompleteList.push(
-			...(availableProps ?? []).map((prop: PhpClassPropInfo) => {
+			...(availableProps ?? []).map((prop: PhpClassPropertyInfo) => {
 				const item = new vscode.CompletionItem(
 					prop.name,
 					vscode.CompletionItemKind.Property,

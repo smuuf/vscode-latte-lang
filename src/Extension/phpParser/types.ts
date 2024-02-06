@@ -25,7 +25,7 @@ export type PhpMethodInfo = {
 	returnType?: PhpType | null
 }
 
-export type PhpClassPropInfo = {
+export type PhpClassPropertyInfo = {
 	name: string
 	location: LocationInfo
 	flags: PhpClassSymbolFlags
@@ -42,7 +42,7 @@ export type PhpClassInfo = {
 		[name: string]: PhpMethodInfo
 	}
 	properties: {
-		[name: string]: PhpClassPropInfo
+		[name: string]: PhpClassPropertyInfo
 	}
 }
 

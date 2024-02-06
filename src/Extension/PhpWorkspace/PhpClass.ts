@@ -1,6 +1,6 @@
 import {
 	PhpClassInfo,
-	PhpClassPropInfo,
+	PhpClassPropertyInfo,
 	PhpMethodInfo,
 	SymbolVisibility,
 } from '../phpParser/types'
@@ -74,33 +74,34 @@ export class PhpClass {
 		return result
 	}
 
-	public async getPublicProps(): Promise<PhpClassPropInfo[]> {
-		const hierarchyList = await this.getClassHierarchyList()
+	public async getProperties(filter: {
+		visibility?: SymbolVisibility
+	}): Promise<PhpClassPropertyInfo[]> {
+		const filterFn = (prop: PhpClassPropertyInfo) => {
+			if (filter.visibility && prop.flags.visibility !== filter.visibility) {
+				return false
+			}
 
-		// We'll keep track of unique property names - we only want to keep the
-		// first encountered property name (from the most sub-class where
-		// it was found).
-		let uniqueNames = new Set()
-		let result: PhpClassPropInfo[] = []
-
-		for (const classInfo of hierarchyList) {
-			// Append found properties from each class in our hierarchy to our
-			// single list of properties.
-			result = result.concat(
-				Object.values(classInfo.properties ?? []).filter(
-					(prop: PhpClassPropInfo) => {
-						const include =
-							prop.flags.visibility === SymbolVisibility.PUBLIC && // Only public.
-							!uniqueNames.has(prop.name) // Only if not yet encountered.
-						if (include) {
-							uniqueNames.add(prop.name)
-						}
-						return include
-					},
-				),
-			)
+			return true
 		}
 
-		return result
+		const hierarchyList = await this.getClassHierarchyList()
+
+		// We'll keep track of unique names - we'll want to return only the
+		// first encountered item during traversing the class hierarchy.
+		let uniqueNames = new Set()
+
+		return hierarchyList.flatMap((cls) => {
+			const matching = Object.values(cls.properties ?? []).filter(
+				(prop: PhpClassPropertyInfo) => {
+					return !uniqueNames.has(prop.name) || uniqueNames.add(prop.name)
+				},
+			)
+			return matching.filter(filterFn)
+		})
+	}
+
+	public async getPublicProperties(): Promise<PhpClassPropertyInfo[]> {
+		return this.getProperties({ visibility: SymbolVisibility.PUBLIC })
 	}
 }
