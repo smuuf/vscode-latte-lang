@@ -15,6 +15,7 @@ import IntervalTree from '@flatten-js/interval-tree'
 import { injectPoisIntoDumbTag } from './LattePois/poiInjector'
 import { AbstractPoi } from './LattePois/poiTypes'
 import CaptureTag from './DumbLatteParser/Tags/CaptureTag'
+import TemplateTypeTag from './DumbLatteParser/Tags/TemplateTypeTag'
 
 export type VariableInfo = {
 	name: string
@@ -168,6 +169,10 @@ export class LatteTagsProcessor {
 				latteFileInfo.pois.insert(poi.range, poi)
 			}
 
+			if (isInstanceOf(tag, TemplateTypeTag)) {
+				narrowType<TemplateTypeTag>(tag)
+				await this.processTemplateTag(latteFileInfo.variables, tag, doc)
+			}
 			if (isInstanceOf(tag, VarTag, VarTypeTag, DefaultTag)) {
 				narrowType<VarTag | VarTypeTag | DefaultTag>(tag)
 				await this.processVariableTags(latteFileInfo.variables, tag, doc)
@@ -183,6 +188,31 @@ export class LatteTagsProcessor {
 		}
 
 		msg.dispose()
+	}
+
+	private async processTemplateTag(
+		varDefs: Map<variableName, VariableInfo[]>,
+		tag: TemplateTypeTag,
+		doc: TextDoc,
+	): VoidPromise {
+		const className = tag.type.repr
+		const cls = await this.extCore.phpWorkspaceInfoProvider.getPhpClass(className)
+
+		const props = await cls?.getPublicProperties()
+		if (!props) {
+			return
+		}
+
+		for (const prop of props) {
+			const varInfo: VariableInfo = {
+				name: `\$${prop.name}`, // Property names have no $, so add it.
+				type: prop.type ?? null,
+				exprType: null,
+				definedAt: await getPositionAtOffset(tag.range.startOffset, doc),
+			}
+
+			varDefs.set(varInfo.name, [varInfo])
+		}
 	}
 
 	private async processVariableTags(

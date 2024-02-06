@@ -10,6 +10,7 @@ import ExtendsTag from '../DumbLatteParser/Tags/ExtendsTag'
 import SandboxTag from '../DumbLatteParser/Tags/SandboxTag'
 import VarTypeTag from '../DumbLatteParser/Tags/VarTypeTag'
 import { getPhpTypeRepr } from '../phpTypeParser/utils'
+import TemplateTypeTag from '../DumbLatteParser/Tags/TemplateTypeTag'
 
 export function injectPoisIntoDumbTag(tag: AbstractTag): void {
 	tag.pois.push(...buildTagDescriptionPoi(tag))
@@ -31,6 +32,10 @@ export function injectPoisIntoDumbTag(tag: AbstractTag): void {
 		case isInstanceOf(tag, SandboxTag):
 			narrowType<SandboxTag>(tag)
 			tag.pois.push(...buildReferencedFilePois('include sandboxed', tag))
+			break
+		case isInstanceOf(tag, TemplateTypeTag):
+			narrowType<TemplateTypeTag>(tag)
+			tag.pois.push(...buildTemplateTypeTagPois(tag))
 			break
 	}
 }
@@ -136,6 +141,50 @@ function buildVarTypeTagPois(tag: VarTypeTag): AbstractPoi[] {
 			) => {
 				const classInfo = await extCore.phpWorkspaceInfoProvider.getPhpClassInfo(
 					tag.varType.repr,
+				)
+				if (!classInfo || !classInfo.location?.uri) {
+					return null
+				}
+
+				const locationLink: vscode.LocationLink = {
+					targetUri: vscode.Uri.parse(classInfo.location.uri),
+					targetRange: ZeroVoidRange,
+					originSelectionRange: new vscode.Range(
+						await getPositionAtOffset(tag.typeRange.startOffset, doc),
+						await getPositionAtOffset(tag.typeRange.endOffset, doc),
+					),
+				}
+
+				return [locationLink]
+			},
+		} as GotoDefinitionPoi,
+	]
+}
+
+function buildTemplateTypeTagPois(tag: TemplateTypeTag): AbstractPoi[] {
+	return [
+		{
+			type: PoiType.Hover,
+			range: [tag.typeRange.startOffset, tag.typeRange.endOffset],
+			contentFn: async (
+				doc: TextDoc,
+				position: vscode.Position,
+				extCore: ExtensionCore,
+			) => {
+				const repr = getPhpTypeRepr(tag.type)
+				return `_template type_ \`${repr}\``
+			},
+		} as HoverPoi,
+		{
+			type: PoiType.GotoDefinition,
+			range: [tag.typeRange.startOffset, tag.typeRange.endOffset],
+			contentFn: async (
+				doc: TextDoc,
+				position: vscode.Position,
+				extCore: ExtensionCore,
+			) => {
+				const classInfo = await extCore.phpWorkspaceInfoProvider.getPhpClassInfo(
+					tag.type.repr,
 				)
 				if (!classInfo || !classInfo.location?.uri) {
 					return null
