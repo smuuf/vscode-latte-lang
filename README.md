@@ -19,11 +19,13 @@ Open and install via VS Code Marketplace: [Nette Latte templates](https://market
 
 ## Provides
 - **Syntax highlight** in Latte files.
-- **Goto variable definitions** for variables defined in Latte files.
-- **Goto class definition** of typed variables in Latte files.
+- **Class-based declaration of template variables** via Latte tag `{templateType My\Lovely\Type}`.
+  - See [Latte docs](https://latte.nette.org/en/type-system) for detailed usage.
+- **Go to variable definition** for variables defined in Latte files.
+- **Go to class definition** of typed variables in Latte files.
   - ![obrazek](https://github.com/smuuf/vscode-latte-lang/assets/6860713/0dadd251-77b7-4cd5-8f8d-e67f371f1aad)
-- **Goto method definition** of methods called on typed variables in Latte files.
-- **Goto files** used in `{include ...}`, `{layout ...}`, `{sandbox ...}`, `{extends ...}` tags.
+- **Go to method definition** of methods called on typed variables in Latte files.
+- **Go to referenced Latte files** used in `{include ...}`, `{layout ...}`, `{sandbox ...}`, `{extends ...}` tags.
 - **Hover information** containing type of variables in Latte files.
 - **Hover information** containing return type of method calls in Latte files.
   - ![obrazek](https://github.com/smuuf/vscode-latte-lang/assets/6860713/4b9e4f2d-7a75-4580-a0ae-e1a69b0f8361)
