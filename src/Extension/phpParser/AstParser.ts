@@ -148,9 +148,13 @@ export class AstParser {
 			)
 		}
 
+		const fqn = this.context.namespace
+			? `${this.context.namespace}\\${className}`
+			: className
+
 		this.data.classes[className] = {
 			name: className,
-			fqn: `${this.context.namespace}\\${className}`,
+			fqn: fqn,
 			namespace: this.context.namespace,
 			parentFqn: parentFqn,
 			location: {

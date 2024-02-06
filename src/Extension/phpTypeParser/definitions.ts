@@ -18,10 +18,12 @@ export const BUILTIN_TYPES = [
 	'void',
 	'static',
 	'self',
+	'list', // Fake type accepted by wider community, but it works here.
 ]
 
 export const BASIC_ITERABLES = [
 	'array',
+	'list',
 	'iterable',
 	'Iterator',
 	'IteratorAggregate',

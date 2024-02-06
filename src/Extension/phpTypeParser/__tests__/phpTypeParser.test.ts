@@ -1,4 +1,6 @@
+import { dump } from '../../utils/common'
 import { normalizeTypeName, parsePhpType } from '../phpTypeParser'
+import { ImportContext } from '../types'
 
 test('Test parsing of PHP-like type hints: Basics', () => {
 	expect(parsePhpType('ahoj')).toEqual({
@@ -88,6 +90,54 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 		],
 		repr: 'ahoj<blazne>|vole|array<kamarade>',
 		iteratesAs: null,
+		nullable: false,
+	})
+})
+
+test('List pseudo-type', () => {
+	expect(parsePhpType('list<string>')).toEqual({
+		name: 'list',
+		repr: 'list<string>',
+		iteratesAs: {
+			value: {
+				name: 'string',
+				repr: 'string',
+				iteratesAs: null,
+				nullable: false,
+			},
+		},
+		nullable: false,
+	})
+
+	let ic: ImportContext = {
+		imports: new Map(),
+		namespace: 'XYZ',
+	}
+
+	expect(parsePhpType('list<string|int>', ic)).toEqual({
+		name: 'list',
+		repr: 'list<string|int>',
+		iteratesAs: {
+			value: {
+				repr: 'string|int',
+				types: [
+					{
+						name: 'string',
+						repr: 'string',
+						iteratesAs: null,
+						nullable: false,
+					},
+					{
+						name: 'int',
+						repr: 'int',
+						iteratesAs: null,
+						nullable: false,
+					},
+				],
+				iteratesAs: null,
+				nullable: false,
+			},
+		},
 		nullable: false,
 	})
 })
