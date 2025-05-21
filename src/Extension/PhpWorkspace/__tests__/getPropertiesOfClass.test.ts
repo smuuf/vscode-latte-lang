@@ -1,11 +1,11 @@
 import { readTestDataFile } from '../../../../tests/testUtils'
 import { parsePhpSource } from '../../phpParser/parser'
+import { parsePhpTypeCached } from '../../phpTypeParser/phpTypeParser'
 import {
 	PhpClassInfo,
 	PhpClassPropertyInfo,
 	SymbolVisibility,
-} from '../../phpParser/types'
-import { parsePhpType } from '../../phpTypeParser/phpTypeParser'
+} from '../../types.phpEntities'
 import { PhpClass } from '../PhpClass'
 
 async function preparePhpClass(): Promise<PhpClass> {
@@ -31,18 +31,18 @@ test('Get public properties of PHP class', async () => {
 	const result = props.map((prop: PhpClassPropertyInfo) => [prop.name, prop.type])
 
 	expect(result).toEqual([
-		['someSubClass_prop_1', parsePhpType('string')],
-		['someSubClass_prop_2', parsePhpType('\\CurlHandle')],
-		['someClass_prop_1', parsePhpType('?string')],
-		['someClass_prop_2_static', parsePhpType('int|bool')],
+		['someSubClass_prop_1', parsePhpTypeCached('string')],
+		['someSubClass_prop_2', parsePhpTypeCached('\\CurlHandle')],
+		['someClass_prop_1', parsePhpTypeCached('?string')],
+		['someClass_prop_2_static', parsePhpTypeCached('int|bool')],
 		// 3 is protected.
-		['someClass_prop_4', parsePhpType('\\App\\Model\\Entities\\DbArtifact')],
-		['someClass_prop_5', parsePhpType('\\DbArtifact')],
+		['someClass_prop_4', parsePhpTypeCached('\\App\\Model\\Entities\\DbArtifact')],
+		['someClass_prop_5', parsePhpTypeCached('\\DbArtifact')],
 		[
 			'entityFileSystemService',
-			parsePhpType('\\Entity\\Service\\EntityFileSystemService|bool'),
+			parsePhpTypeCached('\\Entity\\Service\\EntityFileSystemService|bool'),
 		],
-		['globalFileSystemService', parsePhpType('\\GlobalFileSystemService')],
+		['globalFileSystemService', parsePhpTypeCached('\\GlobalFileSystemService')],
 	])
 
 	const props2 = await cls.getPublicProperties()
@@ -55,5 +55,5 @@ test('Get protected properties of PHP class', async () => {
 	const props = await cls.getProperties({ visibility: SymbolVisibility.PROTECTED })
 	const result = props.map((prop: PhpClassPropertyInfo) => [prop.name, prop.type])
 
-	expect(result).toEqual([['someClass_prop_3_protected', parsePhpType('bool')]])
+	expect(result).toEqual([['someClass_prop_3_protected', parsePhpTypeCached('bool')]])
 })

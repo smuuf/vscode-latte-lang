@@ -1,0 +1,11 @@
+// These are not functions in PHP, but still have function-like calling syntax
+// and a return type.
+// Needs to be parsed with JSON5
+{
+	"empty": {
+		"rtype": "bool",
+	},
+	"isset": {
+		"rtype": "bool",
+	},
+}

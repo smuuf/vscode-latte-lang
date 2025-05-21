@@ -1,4 +1,4 @@
-import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
+import { parsePhpTypeCached, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../../phpTypeParser/utils'
 import { VARIABLE_REGEX } from '../../regexes'
 import { stripIndentation } from '../../utils/stripIndentation'
@@ -57,7 +57,7 @@ export default class VarTypeTag extends AbstractTag {
 		return new this(
 			dumbTag.tagRange,
 			varName,
-			parsePhpType(typeStr)!,
+			parsePhpTypeCached(typeStr)!,
 			{
 				startOffset: dumbTag.argsOffset + varNameOffset,
 				endOffset: dumbTag.argsOffset + varNameOffset + varName.length,

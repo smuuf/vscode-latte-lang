@@ -1,7 +1,7 @@
 import { parsePhpSource as parsePhpSource } from '../parser'
 import { readTestDataFile } from '../../../../tests/testUtils'
 import { SymbolVisibility } from '../types'
-import { parsePhpType } from '../../phpTypeParser/phpTypeParser'
+import { parsePhpTypeCached } from '../../phpTypeParser/phpTypeParser'
 import { dump } from '../../utils/common'
 
 test('Parse classes', async () => {

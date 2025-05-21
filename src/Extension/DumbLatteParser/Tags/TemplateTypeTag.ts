@@ -1,6 +1,5 @@
-import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
+import { parsePhpTypeCached, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../../phpTypeParser/utils'
-import { VARIABLE_REGEX } from '../../regexes'
 import { stripIndentation } from '../../utils/stripIndentation'
 import { ArgsParser } from '../argsParser'
 import { isValidTypeSpec, isValidVariableName } from '../regexes'
@@ -35,7 +34,7 @@ export default class TemplateTypeTag extends AbstractTag {
 			return null
 		}
 
-		return new this(dumbTag.tagRange, parsePhpType(typeStr)!, {
+		return new this(dumbTag.tagRange, parsePhpTypeCached(typeStr)!, {
 			startOffset: dumbTag.argsOffset + typeOffset,
 			endOffset: dumbTag.argsOffset + typeOffset + typeStr.length,
 		} as Range)

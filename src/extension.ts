@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 import { ExtensionCore } from './Extension/ExtensionCore'
 import { DataStorage } from './Extension/utils/DataStorage'
 import { timeit } from './Extension/utils/timeit'
+import { initExtensionContext } from './Extension/phpStubs'
 
 let extCore: ExtensionCore | null
 let dataStorage: DataStorage | null
@@ -22,6 +23,8 @@ async function prepareDataStorage(
 export async function activate(ctx: vscode.ExtensionContext): VoidPromise {
 	const currentVersion: string = ctx.extension.packageJSON.version
 	const lastVersion = ctx.workspaceState.get<string>('version')
+
+	initExtensionContext(ctx)
 
 	// Discard whatever was in the data storage if we're witnessing
 	// a first activation since this extension's update.

@@ -1,5 +1,5 @@
 import { captureBalanced } from '../utils/captureBalanced'
-import { matchRegexAtIndex } from '../utils/common'
+import { matchRegexAtIndex } from '../utils/strings'
 
 export class ArgsParser {
 	private _offset: integer = 0

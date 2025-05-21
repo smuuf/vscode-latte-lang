@@ -1,6 +1,6 @@
-import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
+import { parsePhpTypeCached, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../../phpTypeParser/utils'
-import { stringAfterFirstNeedle } from '../../utils/common'
+import { stringAfterFirstNeedle } from '../../utils/strings'
 import { stripIndentation } from '../../utils/stripIndentation'
 import { isValidTypeSpec, isValidVariableName } from '../regexes'
 import DumbTag from '../Scanner/DumbTag'
@@ -65,7 +65,7 @@ export default class DefaultTag extends AbstractTag {
 		return new this(
 			dumbTag.tagRange,
 			argsParts[1],
-			parsePhpType(argsParts[0])!,
+			parsePhpTypeCached(argsParts[0])!,
 			// Extract the expression after "=".
 			stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
 			{

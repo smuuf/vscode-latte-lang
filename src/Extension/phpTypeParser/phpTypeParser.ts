@@ -188,9 +188,9 @@ function processTypeAst(typeAst: any, importContext: ImportContext): PhpType {
 
 /**
  * The base, non-LRU-cached version, which is sometimes explicitly needed, if
- * the called needs to pass an additional non-JSON-stringifyable argument.
+ * the called needs to pass an additional non-JSON-stringify-able argument.
  */
-function parsePhpTypeRaw(
+function parsePhpType(
 	input: string,
 	importContext: ImportContext | null = null,
 ): PhpType | null {
@@ -203,5 +203,5 @@ function parsePhpTypeRaw(
 	}
 }
 
-const parsePhpType = lruCache(parsePhpTypeRaw, 200)
-export { parsePhpTypeRaw, parsePhpType }
+const parsePhpTypeCached = lruCache(parsePhpType, 800)
+export { parsePhpType, parsePhpTypeCached }

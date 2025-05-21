@@ -1,12 +1,14 @@
 import * as vscode from 'vscode'
 import { statusBarSpinMessage, uriFileExists } from '../utils/common.vscode'
 import { parsePhpSource } from '../phpParser/parser'
-import { PhpClassInfo } from '../phpParser/types'
+import { PhpClassInfo, PhpFunctionInfo } from '../types.phpEntities'
 import { ExtensionCore } from '../ExtensionCore'
 import { FILE_EXT_PHP, LANG_ID_PHP } from '../../constants'
 import { PhpClass } from './PhpClass'
 import { debugLog, isObjectEmpty } from '../utils/common'
+import { getUnixTimestamp, sleep } from '../utils/timeit'
 import { timeit } from '../utils/timeit'
+import { getFunctionInfoFromStubs } from '../phpStubs'
 
 type ClassMapType = { [fqn: phpClassFqn]: PhpClassInfo }
 
@@ -24,7 +26,7 @@ export class PhpWorkspaceInfoProvider {
 		// PHP files almost immediately (but let's wait a bit, to avoid clogging
 		// vscode which might be starting other extensions too).
 		// If we've got some cached data, wait even longer.
-		const scanStartTimeout = isObjectEmpty(this.classMap) ? 1000 : 10_000
+		const scanStartTimeout = isObjectEmpty(this.classMap) ? 1000 : 15_000
 		setTimeout(() => this.scanWorkspace(), scanStartTimeout)
 
 		// Register file-change events.
@@ -70,6 +72,10 @@ export class PhpWorkspaceInfoProvider {
 		}
 
 		return classInfo
+	}
+
+	public async getPhpFunctionInfo(fnName: string): Promise<PhpFunctionInfo | null> {
+		return getFunctionInfoFromStubs(fnName)
 	}
 
 	private async scanPhpFile(uri: vscode.Uri): VoidPromise {
@@ -119,10 +125,30 @@ export class PhpWorkspaceInfoProvider {
 	}
 
 	private async scanWorkspaceFiles(uris: vscode.Uri[]) {
+		// If the number of scanned files goes beyond this number, we're going
+		// to slow down the scanning a bit - this is to avoid overwhelming
+		// the machine with excessive scanning of files.
+		let done = 0
+		let batchSize = 600
+		const doBeforeThrottling = 5000
+
+		let startTime = getUnixTimestamp()
+
 		while (uris.length) {
-			const urisBatch = uris.splice(0, 600)
+			if (done > doBeforeThrottling) {
+				const duration = getUnixTimestamp() - startTime
+				const secs = Math.round(Math.random() * 4 + 2)
+				debugLog(
+					`Scanned too many files (${done} in ${duration} s). Waiting ${secs} s`,
+				)
+				await sleep(secs * 1000)
+			}
+
+			const urisBatch = uris.splice(0, batchSize)
 			const promises = urisBatch.map(async (uri) => this.scanPhpFile(uri))
-			await Promise.all(promises)
+
+			await Promise.allSettled(promises)
+			done += promises.length
 		}
 	}
 }

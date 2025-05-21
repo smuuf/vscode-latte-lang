@@ -1,4 +1,4 @@
-import { stringAfterFirstNeedle } from '../common'
+import { stringAfterFirstNeedle } from '../strings'
 
 test('matchRegexAtIndex', () => {
 	expect(stringAfterFirstNeedle('aaa', 'b')).toBe(null)

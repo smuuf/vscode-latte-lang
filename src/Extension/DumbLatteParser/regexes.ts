@@ -1,4 +1,4 @@
-import { parsePhpType } from '../phpTypeParser/phpTypeParser'
+import { parsePhpTypeCached } from '../phpTypeParser/phpTypeParser'
 import { CLASS_NAME_REGEX, NAME_REGEX, VARIABLE_REGEX } from '../regexes'
 
 /**
@@ -20,5 +20,5 @@ export function isValidVariableName(s: string): boolean {
 }
 
 export function isValidTypeSpec(s: string): boolean {
-	return !!parsePhpType(s)
+	return !!parsePhpTypeCached(s)
 }

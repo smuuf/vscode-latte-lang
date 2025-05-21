@@ -1,4 +1,4 @@
-import { matchRegexAtIndex } from "../common"
+import { matchRegexAtIndex } from '../strings'
 
 test('matchRegexAtIndex', () => {
 	let match: RegExpExecArray | null = null

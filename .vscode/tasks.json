@@ -12,6 +12,12 @@
 				"isDefault": true
 			},
 			"label": "tsc: build - tsconfig.json",
+			"dependsOn": "Generate PHP stubs"
+		},
+		{
+			"type": "shell",
+			"command": "npm run php-stubs",
+			"label": "Generate PHP stubs"
 		}
 	]
 }

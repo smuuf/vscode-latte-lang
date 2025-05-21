@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFileSync } from 'fs'
-import { PhpClassInfo } from '../phpParser/types'
+import { PhpClassInfo } from '../types.phpEntities'
 import util from 'util'
 import { dirname } from 'path'
 import { debugLog } from './common'
@@ -14,6 +14,7 @@ export class DataStorage {
 	private loaded: boolean = false
 
 	constructor(private dbFilePath: string) {
+		debugLog(`DataStorage created with path ${dbFilePath}`)
 		this.data = {
 			classes: {},
 		}
@@ -38,7 +39,7 @@ export class DataStorage {
 
 	public persistDatabase(): void {
 		// NOTE: It seems that async FS functions don't work during extension
-		// deactivation, which is when this is suppoed to be called.
+		// deactivation, which is when this is supposed to be called.
 		// At least on my machine. ¯\_(ツ)_/¯
 		// Maybe this is related to:
 		// https://github.com/microsoft/vscode/issues/144118

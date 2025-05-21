@@ -1,0 +1,2 @@
+# This should be generated before each build and should not be tracked by git.
+php-stubs.json

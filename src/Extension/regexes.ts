@@ -15,4 +15,4 @@ export const QUOTED_STRING_REGEX = /(")(?<s1>(?:\\"|[^"])+)\1|(')(?<s2>(?:\\'|[^
 export const QUOTED_STRING_REGEX_ALONE =
 	/^\s*(?:(")(?<s1>(?:\\"|[^"])+)\1\s*|\s*(')(?<s2>(?:\\'|[^'])+)\2)\s*$/
 
-export const NUMBER_LITERAL_ALONE = /^[0-9][0-9_]*(\.[0-9][0-9]*)?$/
+export const NUMBER_LITERAL_ALONE = /^[0-9][0-9_]*(\.[0-9][0-9_]*)?$/

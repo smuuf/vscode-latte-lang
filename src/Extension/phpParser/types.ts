@@ -1,49 +1,7 @@
-import { PhpType } from '../phpTypeParser/phpTypeParser'
+import { PhpClassInfo } from '../types.phpEntities'
 
 export type PhpWorkspaceFileData = {
 	classes: Record<string, PhpClassInfo>
-}
-
-type LocationInfo = {
-	uri: string | null
-	offset: integer
-} | null
-
-/**
- * For keeping track of flags of symbols in a PHP class (both properties and
- * methods).
- */
-export type PhpClassSymbolFlags = {
-	visibility: SymbolVisibility
-	static: boolean
-}
-
-export type PhpMethodInfo = {
-	name: string
-	location: LocationInfo
-	flags: PhpClassSymbolFlags
-	returnType?: PhpType | null
-}
-
-export type PhpClassPropertyInfo = {
-	name: string
-	location: LocationInfo
-	flags: PhpClassSymbolFlags
-	type?: PhpType | null
-}
-
-export type PhpClassInfo = {
-	name: string
-	namespace: string
-	parentFqn: string | null
-	fqn: string
-	location: LocationInfo
-	methods: {
-		[name: string]: PhpMethodInfo
-	}
-	properties: {
-		[name: string]: PhpClassPropertyInfo
-	}
 }
 
 export type ParsingContext = {
@@ -51,22 +9,3 @@ export type ParsingContext = {
 	uri: string | null
 	imports: Map<string, string>
 }
-
-export enum SymbolVisibility {
-	PUBLIC = 'public',
-	PROTECTED = 'protected',
-	PRIVATE = 'private',
-}
-
-export function symbolVisibilityFactory(v: string): SymbolVisibility {
-	switch (v) {
-		case 'protected':
-			return SymbolVisibility.PROTECTED
-		case 'private':
-			return SymbolVisibility.PRIVATE
-	}
-
-	return SymbolVisibility.PUBLIC
-}
-
-export const SymbolStatic = 'static'

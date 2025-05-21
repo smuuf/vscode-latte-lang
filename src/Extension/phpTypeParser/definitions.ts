@@ -18,7 +18,7 @@ export const BUILTIN_TYPES = [
 	'void',
 	'static',
 	'self',
-	'list', // Fake type accepted by wider community, but it works here.
+	'list', // A fake type, but accepted by wider community.
 ]
 
 export const BASIC_ITERABLES = [

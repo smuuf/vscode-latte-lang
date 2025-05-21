@@ -1,7 +1,7 @@
-import { parsePhpType, PhpType } from '../../phpTypeParser/phpTypeParser'
+import { parsePhpTypeCached, PhpType } from '../../phpTypeParser/phpTypeParser'
 import { getPhpTypeRepr } from '../../phpTypeParser/utils'
 import { VARIABLE_REGEX } from '../../regexes'
-import { stringAfterFirstNeedle } from '../../utils/common'
+import { stringAfterFirstNeedle } from '../../utils/strings'
 import { stripIndentation } from '../../utils/stripIndentation'
 import { ArgsParser } from '../argsParser'
 import { isValidTypeSpec } from '../regexes'
@@ -52,7 +52,7 @@ export default class VarTag extends AbstractTag {
 		return new this(
 			dumbTag.tagRange,
 			varName,
-			typeStr ? parsePhpType(typeStr) : null,
+			typeStr ? parsePhpTypeCached(typeStr) : null,
 			// Extract the expression after "=".32-
 			stringAfterFirstNeedle(dumbTag.args, '=')?.trim() ?? null,
 			{

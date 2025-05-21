@@ -1,18 +1,12 @@
 import * as pp from 'php-parser'
-import {
-	PhpClassInfo,
-	PhpClassPropertyInfo,
-	PhpMethodInfo,
-	PhpWorkspaceFileData,
-	SymbolVisibility,
-	symbolVisibilityFactory,
-} from './types'
-import {
-	isString,
-	narrowType,
-	stringAfterFirstNeedle,
-	stringBeforeFirstNeedle,
-} from '../utils/common'
+import { PhpWorkspaceFileData } from './types'
+import { symbolVisibilityFactory } from '../types.phpEntities'
+import { SymbolVisibility } from '../types.phpEntities'
+import { PhpClassInfo } from '../types.phpEntities'
+import { PhpClassPropertyInfo } from '../types.phpEntities'
+import { PhpMethodInfo } from '../types.phpEntities'
+import { isString, narrowType } from '../utils/common'
+import { stringAfterFirstNeedle, stringBeforeFirstNeedle } from '../utils/strings'
 import { parsePhpType, resolveMaybeImportedName } from '../phpTypeParser/phpTypeParser'
 import { ImportContext } from '../phpTypeParser/types'
 import { DocBlockData, parseDocBlockString } from './docBlockParser'
@@ -64,20 +58,6 @@ export class AstParser {
 		}
 	}
 
-	/**
-	 * Accepts a string or a php-parser's `Identifier`, which wraps a string.
-	 * And just returns the string.
-	 */
-	private parseName(name: string | pp.Identifier): string {
-		if (isString(name)) {
-			narrowType<string>(name)
-			return name
-		}
-
-		narrowType<pp.Identifier>(name)
-		return name.name
-	}
-
 	private parseNamespace(astNode: pp.Namespace): void {
 		this.insideNamespace(astNode, () => this.parseChildren(astNode))
 	}
@@ -93,7 +73,7 @@ export class AstParser {
 			// We want to extract the name that's actually used further in the
 			// code. E.g. for "A\B\C" we want "C". We also handle aliases, e.g.
 			// for "A\B\C as D" we want "D".
-			const baseName = this.parseName(
+			const baseName = parseName(
 				singleUse.alias ?? useName.substring(useName.lastIndexOf('\\') + 1),
 			)
 
@@ -102,7 +82,7 @@ export class AstParser {
 	}
 
 	private parseClass(astNode: pp.Class): void {
-		const className = this.parseName(astNode.name)
+		const className = parseName(astNode.name)
 
 		const methods: { [key: string]: PhpMethodInfo } = {}
 		const properties: { [key: string]: PhpClassPropertyInfo } = {}
@@ -142,10 +122,7 @@ export class AstParser {
 		// we will know that "class A extends X\Y\Z".
 		let parentFqn = null
 		if (astNode.extends) {
-			parentFqn = resolveMaybeImportedName(
-				this.parseName(astNode.extends),
-				this.context,
-			)
+			parentFqn = resolveMaybeImportedName(parseName(astNode.extends), this.context)
 		}
 
 		const fqn = this.context.namespace
@@ -167,7 +144,7 @@ export class AstParser {
 	}
 
 	private parseMethod(astNode: pp.Method): [string, PhpMethodInfo] {
-		const methodName = this.parseName(astNode.name)
+		const methodName = parseName(astNode.name)
 
 		// We already have our own type-string parser, so let's parse the return
 		// type from the method's original non-AST-ed source code.
@@ -223,7 +200,7 @@ export class AstParser {
 			)?.trim()
 
 			const propInfo = {
-				name: this.parseName(propNode.name),
+				name: parseName(propNode.name),
 				flags: {
 					static: astNode.isStatic,
 					visibility: symbolVisibilityFactory(
@@ -269,7 +246,7 @@ export class AstParser {
 				.replace(/(public|protected|private)\s*/, '')
 
 			const propInfo = {
-				name: this.parseName(argNode.name),
+				name: parseName(argNode.name),
 				flags: {
 					static: false,
 					visibility: SymbolVisibility.PUBLIC,
@@ -302,4 +279,18 @@ export class AstParser {
 		fn()
 		this.context.namespace = old
 	}
+}
+
+/**
+ * Accepts a string or a php-parser's `Identifier`, which wraps a string.
+ * And just returns the string.
+ */
+export function parseName(name: string | pp.Identifier): string {
+	if (isString(name)) {
+		narrowType<string>(name)
+		return name
+	}
+
+	narrowType<pp.Identifier>(name)
+	return name.name || '' // Return empty string if not a proper identifier.
 }

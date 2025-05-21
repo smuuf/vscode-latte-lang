@@ -20,7 +20,7 @@ export class WorkspaceEvents {
 	//
 
 	private async fireDocumentEvent(doc: TextDoc, handlers: DocEventHandlersList) {
-		await Promise.all(
+		await Promise.allSettled(
 			handlers.map(async ([handler, langId]) => {
 				if (langId && doc.languageId !== langId) {
 					return
@@ -71,7 +71,7 @@ export class WorkspaceEvents {
 	private async fireUriEvent(uri: vscode.Uri, handlers: UriEventHandlersList) {
 		const uriExt = path.parse(uri.fsPath).ext
 
-		await Promise.all(
+		await Promise.allSettled(
 			handlers.map(([handler, ext]) => {
 				if (ext && uriExt !== ext) {
 					return

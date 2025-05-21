@@ -4,5 +4,8 @@
 src/**
 bin/**
 tests/**
+php-stubs/**
+!php-stubs/php-stubs.json
 *.vsix
 tsconfig.json
+pnpm.lock

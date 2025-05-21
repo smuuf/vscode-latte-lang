@@ -1,9 +1,7 @@
-import {
-	PhpClassInfo,
-	PhpClassPropertyInfo,
-	PhpMethodInfo,
-	SymbolVisibility,
-} from '../phpParser/types'
+import { SymbolVisibility } from '../types.phpEntities'
+import { PhpClassInfo } from '../types.phpEntities'
+import { PhpClassPropertyInfo } from '../types.phpEntities'
+import { PhpMethodInfo } from '../types.phpEntities'
 
 export class PhpClass {
 	constructor(

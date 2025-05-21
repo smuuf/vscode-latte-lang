@@ -14,7 +14,11 @@ export class KeyedCircularBuffer<K, V> {
 	set(key: K, value: V): void {
 		this.items.set(key, value)
 		if (this.items.size > this.size) {
-			this.items.delete(this.firstKey)
+			const firstKey = this.firstKey
+
+			if (firstKey) {
+				this.items.delete(firstKey)
+			}
 		}
 	}
 
@@ -26,7 +30,7 @@ export class KeyedCircularBuffer<K, V> {
 		return this.items.has(key)
 	}
 
-	private get firstKey(): K {
-		return this.items.keys().next().value
+	private get firstKey(): K | null {
+		return this.items.keys().next().value ?? null
 	}
 }

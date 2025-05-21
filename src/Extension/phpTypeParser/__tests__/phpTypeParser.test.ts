@@ -1,16 +1,16 @@
 import { dump } from '../../utils/common'
-import { normalizeTypeName, parsePhpType } from '../phpTypeParser'
+import { normalizeTypeName, parsePhpTypeCached } from '../phpTypeParser'
 import { ImportContext } from '../types'
 
 test('Test parsing of PHP-like type hints: Basics', () => {
-	expect(parsePhpType('ahoj')).toEqual({
+	expect(parsePhpTypeCached('ahoj')).toEqual({
 		name: 'ahoj',
 		repr: 'ahoj',
 		iteratesAs: null,
 		nullable: false,
 	})
 
-	expect(parsePhpType('ahoj<chuligane>')).toEqual({
+	expect(parsePhpTypeCached('ahoj<chuligane>')).toEqual({
 		name: 'ahoj',
 		repr: 'ahoj<chuligane>',
 		// We don't know any in-PHP-world-well-known type "ahoj" with a generic
@@ -19,14 +19,14 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 		nullable: false,
 	})
 
-	expect(parsePhpType('MyNamespace\\MyClass')).toEqual({
+	expect(parsePhpTypeCached('MyNamespace\\MyClass')).toEqual({
 		name: 'MyNamespace\\MyClass',
 		repr: 'MyNamespace\\MyClass',
 		iteratesAs: null,
 		nullable: false,
 	})
 
-	expect(parsePhpType('ahoj[]')).toEqual({
+	expect(parsePhpTypeCached('ahoj[]')).toEqual({
 		name: 'array',
 		repr: 'array<ahoj>',
 		iteratesAs: {
@@ -40,7 +40,7 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 		nullable: false,
 	})
 
-	expect(parsePhpType('ahoj|vole')).toEqual({
+	expect(parsePhpTypeCached('ahoj|vole')).toEqual({
 		types: [
 			{
 				name: 'ahoj',
@@ -60,7 +60,7 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 		nullable: false,
 	})
 
-	expect(parsePhpType('ahoj<blazne>|vole|array<kamarade>')).toEqual({
+	expect(parsePhpTypeCached('ahoj<blazne>|vole|array<kamarade>')).toEqual({
 		types: [
 			{
 				name: 'ahoj',
@@ -95,7 +95,7 @@ test('Test parsing of PHP-like type hints: Basics', () => {
 })
 
 test('List pseudo-type', () => {
-	expect(parsePhpType('list<string>')).toEqual({
+	expect(parsePhpTypeCached('list<string>')).toEqual({
 		name: 'list',
 		repr: 'list<string>',
 		iteratesAs: {
@@ -114,7 +114,7 @@ test('List pseudo-type', () => {
 		namespace: 'XYZ',
 	}
 
-	expect(parsePhpType('list<string|int>', ic)).toEqual({
+	expect(parsePhpTypeCached('list<string|int>', ic)).toEqual({
 		name: 'list',
 		repr: 'list<string|int>',
 		iteratesAs: {
@@ -143,14 +143,14 @@ test('List pseudo-type', () => {
 })
 
 test('Nullable types', () => {
-	expect(parsePhpType('?ahoj')).toEqual({
+	expect(parsePhpTypeCached('?ahoj')).toEqual({
 		name: 'ahoj',
 		repr: 'ahoj',
 		iteratesAs: null,
 		nullable: true,
 	})
 
-	expect(parsePhpType('?array<int>')).toEqual({
+	expect(parsePhpTypeCached('?array<int>')).toEqual({
 		name: 'array',
 		repr: 'array<int>',
 		iteratesAs: {
@@ -164,7 +164,7 @@ test('Nullable types', () => {
 		nullable: true,
 	})
 
-	expect(parsePhpType('?array<?int>')).toEqual({
+	expect(parsePhpTypeCached('?array<?int>')).toEqual({
 		name: 'array',
 		repr: 'array<int>',
 		iteratesAs: {
@@ -178,9 +178,9 @@ test('Nullable types', () => {
 		nullable: true,
 	})
 
-	expect(parsePhpType('?ahoj|vole')).toBeNull()
-	expect(parsePhpType('ahoj|?vole')).toBeNull()
-	expect(parsePhpType('?ahoj|?vole')).toBeNull()
+	expect(parsePhpTypeCached('?ahoj|vole')).toBeNull()
+	expect(parsePhpTypeCached('ahoj|?vole')).toBeNull()
+	expect(parsePhpTypeCached('?ahoj|?vole')).toBeNull()
 })
 
 const WELL_KNOWN_ITERABLES = [
@@ -198,7 +198,7 @@ const WELL_KNOWN_ITERABLES = [
 
 for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 	test(`Test parsing of PHP-like type hints: Basic iterable: ${wellKnownIterable}<V>`, () => {
-		expect(parsePhpType(`${wellKnownIterable}<chuligane>`)).toEqual({
+		expect(parsePhpTypeCached(`${wellKnownIterable}<chuligane>`)).toEqual({
 			name: `${normalizeTypeName(wellKnownIterable)}`,
 			repr: `${normalizeTypeName(wellKnownIterable)}<chuligane>`,
 			iteratesAs: {
@@ -216,7 +216,7 @@ for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 
 for (const wellKnownIterable of WELL_KNOWN_ITERABLES) {
 	test(`Test parsing of PHP-like type hints: Basic iterable: ${wellKnownIterable}<K, V>`, () => {
-		expect(parsePhpType(`${wellKnownIterable}<string, chuligane>`)).toEqual({
+		expect(parsePhpTypeCached(`${wellKnownIterable}<string, chuligane>`)).toEqual({
 			name: `${normalizeTypeName(wellKnownIterable)}`,
 			repr: `${normalizeTypeName(wellKnownIterable)}<string, chuligane>`,
 			iteratesAs: {

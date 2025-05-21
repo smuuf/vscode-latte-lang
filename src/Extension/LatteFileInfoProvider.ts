@@ -4,7 +4,7 @@ import { parseLatte } from './DumbLatteParser/latteParser'
 import DefaultTag from './DumbLatteParser/Tags/DefaultTag'
 import VarTag from './DumbLatteParser/Tags/VarTag'
 import VarTypeTag from './DumbLatteParser/Tags/VarTypeTag'
-import { PhpType, parsePhpType } from './phpTypeParser/phpTypeParser'
+import { PhpType, parsePhpTypeCached } from './phpTypeParser/phpTypeParser'
 import { filterMap, isInstanceOf, narrowType } from './utils/common'
 import { debugMessage, getPositionAtOffset } from './utils/common.vscode'
 import ForeachTag from './DumbLatteParser/Tags/ForeachTag'
@@ -293,9 +293,10 @@ export class LatteTagsProcessor {
 	): VoidPromise {
 		const position = await getPositionAtOffset(tag.nameOffset, doc)
 
+		// The result of {capture} tag is a Latte Html object.
 		const varInfo: VariableInfo = {
 			name: tag.varName,
-			type: parsePhpType('\\Latte\\Runtime\\Html'),
+			type: parsePhpTypeCached('\\Latte\\Runtime\\Html'),
 			exprType: null,
 			definedAt: position,
 		}

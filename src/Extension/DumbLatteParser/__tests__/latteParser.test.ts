@@ -1,5 +1,5 @@
 import { readTestDataFile } from '../../../../tests/testUtils'
-import { parsePhpType } from '../../phpTypeParser/phpTypeParser'
+import { parsePhpTypeCached } from '../../phpTypeParser/phpTypeParser'
 import DefaultTag from '../Tags/DefaultTag'
 import ForeachTag from '../Tags/ForeachTag'
 import VarTag from '../Tags/VarTag'
@@ -29,7 +29,7 @@ test('Test parser', () => {
 				endOffset: 29,
 			},
 			'$druhy',
-			parsePhpType('bool'),
+			parsePhpTypeCached('bool'),
 			null,
 			{
 				startOffset: 23,
@@ -42,7 +42,7 @@ test('Test parser', () => {
 				endOffset: 66,
 			},
 			'$treti',
-			parsePhpType('\\MyNamespace\\MyClass')!,
+			parsePhpTypeCached('\\MyNamespace\\MyClass')!,
 			{
 				startOffset: 60,
 				endOffset: 66,
@@ -71,7 +71,7 @@ test('Test parser', () => {
 				endOffset: 150,
 			},
 			'$paty',
-			parsePhpType('int|float'),
+			parsePhpTypeCached('int|float'),
 			'5',
 			{
 				startOffset: 141,
@@ -100,7 +100,7 @@ test('Test parser', () => {
 				endOffset: 315,
 			},
 			'$devaty',
-			parsePhpType('?MyNamespace\\MyClass')!,
+			parsePhpTypeCached('?MyNamespace\\MyClass')!,
 			{
 				startOffset: 308,
 				endOffset: 315,
